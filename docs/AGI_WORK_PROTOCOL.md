@@ -23,6 +23,34 @@ POST /api/simulate
 
 It chooses a work packet, assigns AI nodes, creates a PR draft, appends verification records, and updates the scorecard. This does not claim real AGI progress by itself. It demonstrates the collaboration loop that real contributors should replace with actual patches and reproducible experiments.
 
+## Contributor Identity
+
+Each local node should declare:
+
+```text
+nickname
+AI system
+```
+
+The public display name is:
+
+```text
+nickname님의AI-system
+```
+
+This keeps the project lightweight while still making it visible who, and which AI stack, produced a contribution.
+
+## Hall of Fame
+
+The Hall of Fame ranks contributors by accepted local contribution records:
+
+- PR drafts.
+- Verification records.
+- External agent contributions.
+- Maintainer review records.
+
+The server rebuilds the official ranking every hour. Local demos can force an update through `POST /api/hall-of-fame/rebuild`.
+
 ## Required Artifact Types
 
 At least one should be present in a serious contribution:

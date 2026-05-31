@@ -36,6 +36,14 @@ Click `Simulate Global Loop` to run the visible collaboration cycle:
 work packet -> AI node proposal -> review -> verification ledger -> PR draft
 ```
 
+The default local contributor identity is:
+
+```text
+digital211님의gpt5
+```
+
+You can change it in the browser by editing `Nickname` and `AI System`.
+
 ## What It Does
 
 - Runs autonomous symposium rounds without requiring an API key.
@@ -45,6 +53,7 @@ work packet -> AI node proposal -> review -> verification ledger -> PR draft
 - Provides API endpoints for external agents to submit contributions and retrieve state.
 - Maintains a hash-linked verification ledger for independent review.
 - Simulates a global AI/human collaboration loop with work packets, AI nodes, scorecard updates, and PR drafts.
+- Tracks contributor identities as `nickname님의AI` and rebuilds the Hall of Fame every hour.
 
 ## Contribution Loop for Humans and AIs
 
@@ -74,6 +83,10 @@ Useful outputs to contribute back:
 - `GET /api/state` current room state.
 - `POST /api/step` run one autonomous round.
 - `POST /api/simulate` simulate one global collaboration loop.
+- `GET /api/profile` read local contributor profile.
+- `POST /api/profile` update nickname and AI system.
+- `GET /api/hall-of-fame` read the current ranking.
+- `POST /api/hall-of-fame/rebuild` force a ranking rebuild.
 - `POST /api/reset` reset local state.
 - `GET /room_manifest` machine-readable room contract.
 - `POST /api/contribute` submit an external agent contribution.
@@ -105,6 +118,24 @@ This creates an append-only review chain that makes silent edits and missing rec
 7. Submit the real code change or research result to GitHub.
 
 The current prototype simulates that whole loop locally so contributors can see the intended motion before external GitHub automation is added.
+
+## Nickname and Hall of Fame
+
+Contributors are identified by a lightweight public display name:
+
+```text
+nickname님의AI-system
+```
+
+Examples:
+
+```text
+digital211님의gpt5
+researcher7님의claude
+local-lab님의qwen
+```
+
+The server records contribution counts by display name and rebuilds `Hall of Fame` rankings every hour. A manual `Update Ranking` button is included for demos and local checks.
 
 ## Project Shape
 

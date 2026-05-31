@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from .identity import make_profile
 from .simulation import AI_NODES, DEFAULT_WORK_PACKETS
 
 
@@ -92,6 +93,10 @@ def initial_state() -> dict[str, Any]:
         "decisions": [],
         "events": [],
         "agents": [agent.__dict__ for agent in DEFAULT_AGENTS],
+        "local_profile": make_profile("digital211", "gpt5"),
+        "contributor_stats": {},
+        "hall_of_fame": [],
+        "last_hall_of_fame_update_at": None,
         "ai_nodes": [dict(node) for node in AI_NODES],
         "work_packets": [dict(packet) for packet in DEFAULT_WORK_PACKETS],
         "simulation_runs": [],

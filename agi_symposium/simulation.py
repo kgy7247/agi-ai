@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from .identity import display_name, ensure_identity_state, rebuild_hall_of_fame, record_contribution
 
 AI_NODES = [
     {
@@ -77,7 +78,7 @@ DEFAULT_WORK_PACKETS = [
 
 
 def ensure_simulation_state(state: dict[str, Any]) -> dict[str, Any]:
-    next_state = dict(state)
+    next_state = ensure_identity_state(state)
     if "work_packets" not in next_state:
         next_state["work_packets"] = [dict(packet) for packet in DEFAULT_WORK_PACKETS]
     if "simulation_runs" not in next_state:
@@ -100,17 +101,23 @@ def ensure_simulation_state(state: dict[str, Any]) -> dict[str, Any]:
 def run_global_collaboration_simulation(state: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, str]]]:
     next_state = ensure_simulation_state(state)
     run_number = len(next_state.get("simulation_runs", [])) + 1
+    primary_contributor = display_name(next_state["local_profile"])
     packet = select_work_packet(next_state["work_packets"])
     if packet is None:
         packet = recycle_first_packet(next_state["work_packets"])
 
-    simulated_patch = make_pr_draft(run_number, packet)
-    node_events = make_node_events(run_number, packet, simulated_patch)
-    verification_specs = make_verification_specs(packet, simulated_patch)
+    simulated_patch = make_pr_draft(run_number, packet, primary_contributor)
+    node_events = make_node_events(run_number, packet, simulated_patch, primary_contributor)
+    verification_specs = make_verification_specs(packet, simulated_patch, primary_contributor)
     result_counts = count_results(verification_specs)
 
     update_packet(packet, result_counts, simulated_patch)
     update_scorecard(next_state["scorecard"], packet["capability"], result_counts)
+    next_state = record_contribution(next_state, primary_contributor, "pr_draft")
+    next_state = record_contribution(next_state, "maintainer님의reviewer", "maintainer_review")
+    for spec in verification_specs:
+        next_state = record_contribution(next_state, spec["verifier"], "verification")
+    next_state = rebuild_hall_of_fame(next_state)
 
     simulation_run = {
         "id": f"SIM-{run_number:03d}",
@@ -118,6 +125,7 @@ def run_global_collaboration_simulation(state: dict[str, Any]) -> tuple[dict[str
         "title": packet["title"],
         "status": packet["status"],
         "pr_draft_id": simulated_patch["id"],
+        "contributor": primary_contributor,
         "verification_summary": result_counts,
         "created_at": now_iso(),
     }
@@ -127,7 +135,7 @@ def run_global_collaboration_simulation(state: dict[str, Any]) -> tuple[dict[str
             "type": "simulation_started",
             "round": int(next_state.get("round", 0)),
             "agent_id": "global-simulator",
-            "content": f"{simulation_run['id']} selected {packet['id']}: {packet['title']}",
+            "content": f"{simulation_run['id']} selected {packet['id']}: {packet['title']} for {primary_contributor}",
             "created_at": now_iso(),
         },
         *node_events,
@@ -172,15 +180,16 @@ def recycle_first_packet(work_packets: list[dict[str, Any]]) -> dict[str, Any]:
     return packet
 
 
-def make_pr_draft(run_number: int, packet: dict[str, Any]) -> dict[str, Any]:
+def make_pr_draft(run_number: int, packet: dict[str, Any], contributor: str) -> dict[str, Any]:
     branch = packet["id"].lower().replace("-", "/")
     return {
         "id": f"PRD-{run_number:03d}",
         "title": f"[Experiment] {packet['title']}",
         "branch": f"agent/{branch}",
         "work_packet_id": packet["id"],
+        "contributor": contributor,
         "summary": (
-            f"Simulated contribution for {packet['capability']}. "
+            f"Simulated contribution by {contributor} for {packet['capability']}. "
             "The patch converts the symposium claim into a testable artifact."
         ),
         "files": [
@@ -200,22 +209,27 @@ def make_pr_draft(run_number: int, packet: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def make_node_events(run_number: int, packet: dict[str, Any], pr_draft: dict[str, Any]) -> list[dict[str, Any]]:
+def make_node_events(
+    run_number: int,
+    packet: dict[str, Any],
+    pr_draft: dict[str, Any],
+    contributor: str,
+) -> list[dict[str, Any]]:
     messages = [
         (
-            "gpt-research-node",
+            contributor,
             f"Implemented draft {pr_draft['id']} for {packet['id']} and attached test command: {pr_draft['test_command']}.",
         ),
         (
-            "claude-review-node",
+            "reviewer님의claude",
             f"Reviewed {packet['claim']} and required concrete failure criteria before merge.",
         ),
         (
-            "local-qwen-node",
+            "reproducer님의local-qwen",
             f"Repeated the proposed workflow from a clean clone and checked {packet['expected_artifact']}.",
         ),
         (
-            "human-maintainer-node",
+            "maintainer님의reviewer",
             f"Marked {packet['id']} mergeable only after at least two independent pass records and zero fail records.",
         ),
     ]
@@ -231,26 +245,30 @@ def make_node_events(run_number: int, packet: dict[str, Any], pr_draft: dict[str
     ]
 
 
-def make_verification_specs(packet: dict[str, Any], pr_draft: dict[str, Any]) -> list[dict[str, str]]:
+def make_verification_specs(
+    packet: dict[str, Any],
+    pr_draft: dict[str, Any],
+    contributor: str,
+) -> list[dict[str, str]]:
     return [
         {
             "claim": packet["claim"],
             "artifact": packet["expected_artifact"],
-            "verifier": "gpt-research-node",
+            "verifier": contributor,
             "result": "pass",
             "evidence": f"{pr_draft['id']} includes {packet['expected_artifact']} and a test command.",
         },
         {
             "claim": packet["claim"],
             "artifact": packet["expected_artifact"],
-            "verifier": "claude-review-node",
+            "verifier": "reviewer님의claude",
             "result": "needs-review",
             "evidence": "Reviewer found the artifact shape useful but requested independent reproduction.",
         },
         {
             "claim": packet["claim"],
             "artifact": packet["expected_artifact"],
-            "verifier": "local-qwen-node",
+            "verifier": "reproducer님의local-qwen",
             "result": "pass",
             "evidence": "Clean-node simulation reached the same expected artifact and verification command.",
         },

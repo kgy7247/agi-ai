@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import urlparse
 
 from .engine import accept_contribution, run_round
+from .identity import display_name, rebuild_hall_of_fame, record_contribution, set_local_profile
 from .manifest import room_manifest
 from .simulation import ensure_simulation_state, run_global_collaboration_simulation
 from .storage import VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
@@ -141,6 +144,16 @@ INDEX_HTML = """<!doctype html>
         <div class="stat"><div class="label">Status</div><div class="value" id="status">idle</div></div>
       </div>
       <div class="block">
+        <h2>Local Contributor</h2>
+        <div class="label">Display</div>
+        <div class="value" id="profileDisplay">digital211님의gpt5</div>
+        <div class="label">Nickname</div>
+        <input id="nickname" value="digital211" />
+        <div class="label">AI System</div>
+        <input id="aiSystem" value="gpt5" />
+        <button id="profileBtn">Save Profile</button>
+      </div>
+      <div class="block">
         <h2>Open Questions</h2>
         <ul id="questions"></ul>
       </div>
@@ -163,6 +176,12 @@ INDEX_HTML = """<!doctype html>
       <div class="block">
         <h2>Verification Ledger</h2>
         <div class="sub" id="ledgerSummary">loading</div>
+      </div>
+      <div class="block">
+        <h2>Hall of Fame</h2>
+        <div class="sub" id="hofUpdated">not updated</div>
+        <ul id="hallOfFame"></ul>
+        <button id="hofBtn">Update Ranking</button>
       </div>
       <div class="block">
         <h2>External Agent Contribution</h2>
@@ -189,11 +208,17 @@ INDEX_HTML = """<!doctype html>
     function render(state) {
       $("round").textContent = state.round ?? 0;
       $("status").textContent = state.status ?? "idle";
+      const profile = state.local_profile || {};
+      $("profileDisplay").textContent = profile.display_name || `${profile.nickname || "digital211"}님의${profile.ai_system || "gpt5"}`;
+      $("nickname").value = profile.nickname || "digital211";
+      $("aiSystem").value = profile.ai_system || "gpt5";
       $("questions").innerHTML = list(state.open_questions || [], q => `<li>${escapeHtml(q)}</li>`);
       $("backlog").innerHTML = list(state.backlog || [], item => `<li><strong>${escapeHtml(item.id)}</strong> ${escapeHtml(item.title)} <span class="sub">${escapeHtml(item.status)}</span></li>`);
       $("workPackets").innerHTML = list(state.work_packets || [], item => `<li><strong>${escapeHtml(item.id)}</strong> ${escapeHtml(item.title)} <span class="pill">${escapeHtml(item.status)}</span></li>`);
       $("scorecard").innerHTML = Object.entries(state.scorecard || {}).map(([name, score]) => `<li><strong>${escapeHtml(name)}</strong> pass ${score.pass || 0}, fail ${score.fail || 0}, review ${score["needs-review"] || 0}</li>`).join("");
       $("prDrafts").innerHTML = list([...(state.pr_drafts || [])].slice(-5).reverse(), draft => `<li><strong>${escapeHtml(draft.id)}</strong> ${escapeHtml(draft.title)} <span class="sub">${escapeHtml(draft.branch)}</span></li>`);
+      $("hofUpdated").textContent = state.last_hall_of_fame_update_at ? `updated ${state.last_hall_of_fame_update_at}` : "not updated";
+      $("hallOfFame").innerHTML = list(state.hall_of_fame || [], row => `<li><strong>#${escapeHtml(row.rank)} ${escapeHtml(row.display_name)}</strong> <span class="pill">${escapeHtml(row.total)} contributions</span></li>`);
       const events = [...(state.events || [])].reverse();
       $("events").innerHTML = events.map(event => `
         <article class="event ${event.type === "decision" ? "decision" : ""} ${escapeHtml(event.type || "")}">
@@ -219,11 +244,17 @@ INDEX_HTML = """<!doctype html>
     $("stepBtn").onclick = () => busy($("stepBtn"), () => api("/api/step", { method: "POST" }));
     $("simulateBtn").onclick = () => busy($("simulateBtn"), () => api("/api/simulate", { method: "POST" }));
     $("resetBtn").onclick = () => busy($("resetBtn"), () => api("/api/reset", { method: "POST" }));
+    $("profileBtn").onclick = () => busy($("profileBtn"), () => api("/api/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: $("nickname").value, ai_system: $("aiSystem").value })
+    }));
+    $("hofBtn").onclick = () => busy($("hofBtn"), () => api("/api/hall-of-fame/rebuild", { method: "POST" }));
     $("manifestBtn").onclick = () => window.open("/room_manifest", "_blank");
     $("contributeBtn").onclick = () => busy($("contributeBtn"), () => api("/api/contribute", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agent_id: $("agentId").value, content: $("contribution").value })
+      body: JSON.stringify({ agent_id: $("agentId").value, content: $("contribution").value, nickname: $("nickname").value, ai_system: $("aiSystem").value })
     }));
     refresh();
     refreshLedger();
@@ -242,8 +273,21 @@ class SymposiumHandler(BaseHTTPRequestHandler):
             self.send_text(INDEX_HTML, "text/html; charset=utf-8")
         elif path == "/api/state":
             state = ensure_simulation_state(load_state())
+            state = rebuild_hall_of_fame(state)
             save_state(state)
             self.send_json(state)
+        elif path == "/api/profile":
+            state = ensure_simulation_state(load_state())
+            self.send_json(state["local_profile"])
+        elif path == "/api/hall-of-fame":
+            state = rebuild_hall_of_fame(ensure_simulation_state(load_state()))
+            save_state(state)
+            self.send_json(
+                {
+                    "last_hall_of_fame_update_at": state.get("last_hall_of_fame_update_at"),
+                    "hall_of_fame": state.get("hall_of_fame", []),
+                }
+            )
         elif path == "/room_manifest":
             self.send_json(room_manifest(load_state()))
         elif path == "/api/verification":
@@ -275,9 +319,37 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                 save_state(state)
                 append_events(events)
                 self.send_json({"state": state, "events": events, "verification_records": saved_records})
+            elif path == "/api/profile":
+                body = self.read_json()
+                state = set_local_profile(
+                    load_state(),
+                    str(body.get("nickname") or "digital211"),
+                    str(body.get("ai_system") or "gpt5"),
+                )
+                save_state(state)
+                self.send_json(state["local_profile"])
+            elif path == "/api/hall-of-fame/rebuild":
+                state = rebuild_hall_of_fame(load_state(), force=True)
+                save_state(state)
+                self.send_json(
+                    {
+                        "last_hall_of_fame_update_at": state.get("last_hall_of_fame_update_at"),
+                        "hall_of_fame": state.get("hall_of_fame", []),
+                    }
+                )
             elif path == "/api/contribute":
                 body = self.read_json()
-                state, event = accept_contribution(load_state(), body)
+                state = load_state()
+                if body.get("nickname") or body.get("ai_system"):
+                    state = set_local_profile(
+                        state,
+                        str(body.get("nickname") or "digital211"),
+                        str(body.get("ai_system") or "gpt5"),
+                    )
+                    body["agent_id"] = display_name(state["local_profile"])
+                state, event = accept_contribution(state, body)
+                state = record_contribution(state, str(event.get("agent_id") or ""), "external_contribution")
+                state = rebuild_hall_of_fame(state)
                 save_state(state)
                 append_events([event])
                 self.send_json({"accepted": True, "event": event, "state": state})
@@ -291,6 +363,9 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                     evidence=str(body.get("evidence") or ""),
                 )
                 saved = append_verification(VERIFICATION_LEDGER_PATH, record)
+                state = record_contribution(load_state(), str(saved["verifier"]), "verification")
+                state = rebuild_hall_of_fame(state)
+                save_state(state)
                 self.send_json({"accepted": True, "record": saved})
             else:
                 self.send_error(404, "Not found")
@@ -330,8 +405,23 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=8787)
     args = parser.parse_args()
     server = ThreadingHTTPServer((args.host, args.port), SymposiumHandler)
+    start_hourly_hall_of_fame_worker()
     print(f"AGI symposium running at http://{args.host}:{args.port}")
     server.serve_forever()
+
+
+def start_hourly_hall_of_fame_worker() -> None:
+    def worker() -> None:
+        while True:
+            time.sleep(3600)
+            try:
+                state = rebuild_hall_of_fame(load_state(), force=True)
+                save_state(state)
+            except Exception:
+                continue
+
+    thread = threading.Thread(target=worker, daemon=True)
+    thread.start()
 
 
 if __name__ == "__main__":

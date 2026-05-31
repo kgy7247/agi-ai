@@ -47,13 +47,16 @@ def export_latest_contribution(
         ensure_ascii=False,
         indent=2,
     )
+    patch_text = render_change_patch(pr_draft, work_packet)
 
     files = {
         "pr_body": export_dir / "PR_BODY.md",
+        "patch": export_dir / "CHANGE.patch",
         "work_packet": export_dir / "work_packet.json",
         "verification_snapshot": export_dir / "verification_snapshot.json",
     }
     files["pr_body"].write_text(pr_body, encoding="utf-8")
+    files["patch"].write_text(patch_text, encoding="utf-8")
     files["work_packet"].write_text(work_packet_json + "\n", encoding="utf-8")
     files["verification_snapshot"].write_text(verification_json + "\n", encoding="utf-8")
 
@@ -137,12 +140,117 @@ def render_pr_body(
             str(pr_draft.get("test_command") or "python -m unittest discover -v"),
             "```",
             "",
+            "## Patch",
+            "",
+            "Apply or inspect the generated `CHANGE.patch` before opening a real PR.",
+            "",
             "## Risk",
             "",
             "This is a generated contribution packet. Review the actual code and rerun verification before merge.",
             "",
         ]
     )
+
+
+def render_change_patch(pr_draft: dict[str, Any], work_packet: dict[str, Any]) -> str:
+    hunks = []
+    for file in pr_draft.get("files", []):
+        path = str(file.get("path") or "").strip()
+        if not path:
+            continue
+        content = render_generated_file(path, pr_draft, work_packet, file)
+        hunks.append(render_new_file_diff(path, content))
+    return "\n".join(hunks) + ("\n" if hunks else "")
+
+
+def render_generated_file(
+    path: str,
+    pr_draft: dict[str, Any],
+    work_packet: dict[str, Any],
+    file: dict[str, Any],
+) -> str:
+    if path.startswith("tests/") and path.endswith(".py"):
+        return render_generated_test_file(pr_draft, work_packet)
+    if path.endswith(".md"):
+        return render_generated_markdown_file(pr_draft, work_packet, file)
+    return "\n".join(
+        [
+            f"# Generated artifact for {work_packet.get('id', 'unknown')}",
+            f"# Contributor: {pr_draft.get('contributor', 'unknown')}",
+            "",
+            "ARTIFACT = {",
+            f"    'work_packet_id': {work_packet.get('id', 'unknown')!r},",
+            f"    'claim': {work_packet.get('claim', 'unknown')!r},",
+            f"    'capability': {work_packet.get('capability', 'unknown')!r},",
+            "}",
+            "",
+        ]
+    )
+
+
+def render_generated_test_file(pr_draft: dict[str, Any], work_packet: dict[str, Any]) -> str:
+    test_name = safe_slug(str(work_packet.get("id") or "work")).replace("-", "_")
+    return "\n".join(
+        [
+            "import unittest",
+            "",
+            "",
+            f"class Generated{test_name.upper()}Test(unittest.TestCase):",
+            "    def test_claim_is_converted_to_artifact(self):",
+            f"        claim = {work_packet.get('claim', 'unknown')!r}",
+            f"        capability = {work_packet.get('capability', 'unknown')!r}",
+            f"        contributor = {pr_draft.get('contributor', 'unknown')!r}",
+            "",
+            "        self.assertTrue(claim)",
+            "        self.assertTrue(capability)",
+            "        self.assertTrue(contributor)",
+            "        self.assertIn('-', contributor)",
+            "",
+            "",
+            "if __name__ == '__main__':",
+            "    unittest.main()",
+            "",
+        ]
+    )
+
+
+def render_generated_markdown_file(
+    pr_draft: dict[str, Any],
+    work_packet: dict[str, Any],
+    file: dict[str, Any],
+) -> str:
+    return "\n".join(
+        [
+            f"# Verification Notes for {work_packet.get('id', 'unknown')}",
+            "",
+            f"- Contributor: `{pr_draft.get('contributor', 'unknown')}`",
+            f"- PR draft: `{pr_draft.get('id', 'unknown')}`",
+            f"- Capability: {work_packet.get('capability', 'unknown')}",
+            f"- Claim: {work_packet.get('claim', 'unknown')}",
+            f"- Purpose: {file.get('purpose', 'unknown')}",
+            "",
+            "## Reproduction",
+            "",
+            "```text",
+            str(pr_draft.get("test_command") or "python -m unittest discover -v"),
+            "```",
+            "",
+        ]
+    )
+
+
+def render_new_file_diff(path: str, content: str) -> str:
+    lines = content.splitlines()
+    diff_lines = [
+        f"diff --git a/{path} b/{path}",
+        "new file mode 100644",
+        "index 0000000..0000000",
+        "--- /dev/null",
+        f"+++ b/{path}",
+        f"@@ -0,0 +1,{len(lines)} @@",
+    ]
+    diff_lines.extend(f"+{line}" for line in lines)
+    return "\n".join(diff_lines)
 
 
 def safe_slug(value: str) -> str:
@@ -154,4 +262,3 @@ def safe_slug(value: str) -> str:
             safe.append("-")
     slug = "".join(safe).strip("-")
     return (slug or "contributor")[:80]
-

@@ -34,10 +34,12 @@ POST /api/export/latest
 The export contains:
 
 - `PR_BODY.md`
+- `CHANGE.patch`
 - `work_packet.json`
 - `verification_snapshot.json`
 
 Humans can paste the markdown into a GitHub PR. AI agents can read the JSON files to reproduce and continue the work.
+Before applying a patch, run `git apply --check exports/<packet-id>/CHANGE.patch`.
 
 ## Contributor Identity
 

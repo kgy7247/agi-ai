@@ -40,6 +40,7 @@ Click `Export Packet` after a simulation to write GitHub-ready files:
 
 ```text
 exports/<packet-id>/PR_BODY.md
+exports/<packet-id>/CHANGE.patch
 exports/<packet-id>/work_packet.json
 exports/<packet-id>/verification_snapshot.json
 ```
@@ -138,10 +139,17 @@ The current prototype simulates that whole loop locally so contributors can see 
 `Export Packet` writes a local folder under `exports/` with:
 
 - `PR_BODY.md`: a GitHub pull request body draft.
+- `CHANGE.patch`: a unified diff that can be inspected with `git apply --check`.
 - `work_packet.json`: machine-readable task and PR draft context.
 - `verification_snapshot.json`: verification records available at export time.
 
 The `exports/` directory is ignored by git because it is local generated output.
+
+Check the generated patch:
+
+```powershell
+git apply --check exports/<packet-id>/CHANGE.patch
+```
 
 ## Nickname and Hall of Fame
 

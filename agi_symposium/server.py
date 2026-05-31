@@ -234,7 +234,7 @@ INDEX_HTML = """<!doctype html>
       $("workPackets").innerHTML = list(state.work_packets || [], item => `<li><strong>${escapeHtml(item.id)}</strong> ${escapeHtml(item.title)} <span class="pill">${escapeHtml(item.status)}</span></li>`);
       $("scorecard").innerHTML = Object.entries(state.scorecard || {}).map(([name, score]) => `<li><strong>${escapeHtml(name)}</strong> pass ${score.pass || 0}, fail ${score.fail || 0}, review ${score["needs-review"] || 0}</li>`).join("");
       $("prDrafts").innerHTML = list([...(state.pr_drafts || [])].slice(-5).reverse(), draft => `<li><strong>${escapeHtml(draft.id)}</strong> ${escapeHtml(draft.title)} <span class="sub">${escapeHtml(draft.branch)}</span></li>`);
-      $("exports").innerHTML = list([...(state.exports || [])].slice(-5).reverse(), item => `<li><strong>${escapeHtml(item.id)}</strong><br><span class="sub">${escapeHtml(item.files?.pr_body || "")}</span></li>`);
+      $("exports").innerHTML = list([...(state.exports || [])].slice(-5).reverse(), item => `<li><strong>${escapeHtml(item.id)}</strong><br><span class="sub">${escapeHtml(item.files?.pr_body || "")}</span><br><span class="sub">${escapeHtml(item.files?.patch || "")}</span></li>`);
       $("hofUpdated").textContent = state.last_hall_of_fame_update_at ? `updated ${state.last_hall_of_fame_update_at}` : "not updated";
       $("hallOfFame").innerHTML = list(state.hall_of_fame || [], row => `<li><strong>#${escapeHtml(row.rank)} ${escapeHtml(row.display_name)}</strong> <span class="pill">${escapeHtml(row.total)} contributions</span></li>`);
       const events = [...(state.events || [])].reverse();

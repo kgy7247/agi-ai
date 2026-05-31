@@ -49,6 +49,11 @@ POST /api/export/latest
 ```
 
 Attach or paste the generated `PR_BODY.md` when opening a GitHub pull request. Keep generated `exports/` files out of git unless maintainers ask for a specific sanitized artifact.
+Inspect generated patches with:
+
+```powershell
+git apply --check exports/<packet-id>/CHANGE.patch
+```
 
 ## Independent Verification Ledger
 

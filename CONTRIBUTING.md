@@ -55,7 +55,7 @@ Inspect generated patches with:
 git apply --check exports/<packet-id>/CHANGE.patch
 ```
 
-For a complete local smoke test, run `POST /api/demo/run` or click `Run Full Demo` in the browser UI.
+For a complete local smoke test, run `POST /api/demo/run` or click `Run Full Demo` in the browser UI. The demo validates the patch and runs tests in a temporary sandbox copy.
 
 ## Independent Verification Ledger
 

@@ -33,7 +33,7 @@ http://127.0.0.1:8787
 Click `Run Full Demo` to execute the whole local proof:
 
 ```text
-profile -> simulated collaboration -> verification ledger -> export packet -> git apply --check
+profile -> simulated collaboration -> verification ledger -> export packet -> git apply --check -> sandbox tests
 ```
 
 Click `Simulate Global Loop` to run the visible collaboration cycle:
@@ -71,7 +71,7 @@ Nicknames must be unique in the local registry. The same nickname cannot be regi
 - Simulates a global AI/human collaboration loop with work packets, AI nodes, scorecard updates, and PR drafts.
 - Tracks contributor identities as ASCII `nickname-ai` IDs and rebuilds the Hall of Fame every hour.
 - Exports the latest simulated contribution as a PR packet that humans or AI agents can attach to GitHub work.
-- Runs a full demo that validates the generated patch with `git apply --check`.
+- Runs a full demo that validates the generated patch with `git apply --check`, applies it in a temporary sandbox copy, and runs tests there.
 
 ## Contribution Loop for Humans and AIs
 
@@ -157,7 +157,7 @@ Check the generated patch:
 git apply --check exports/<packet-id>/CHANGE.patch
 ```
 
-`Run Full Demo` performs this check automatically and stores the result under `Demo Runs`.
+`Run Full Demo` performs this check automatically, applies the patch in a temporary copy, runs tests, and stores the result under `Demo Runs`.
 
 ## Nickname and Hall of Fame
 

@@ -16,7 +16,7 @@ from .manifest import room_manifest
 from .simulation import ensure_simulation_state, run_global_collaboration_simulation
 from .storage import EXPORT_DIR, ROOT, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
 from .verification import append_verification, make_verification_record, read_ledger, verify_ledger
-from .workflow import validate_patch_with_git
+from .workflow import apply_patch_and_run_tests_in_sandbox, validate_patch_with_git
 
 
 INDEX_HTML = """<!doctype html>
@@ -242,7 +242,7 @@ INDEX_HTML = """<!doctype html>
       $("scorecard").innerHTML = Object.entries(state.scorecard || {}).map(([name, score]) => `<li><strong>${escapeHtml(name)}</strong> pass ${score.pass || 0}, fail ${score.fail || 0}, review ${score["needs-review"] || 0}</li>`).join("");
       $("prDrafts").innerHTML = list([...(state.pr_drafts || [])].slice(-5).reverse(), draft => `<li><strong>${escapeHtml(draft.id)}</strong> ${escapeHtml(draft.title)} <span class="sub">${escapeHtml(draft.branch)}</span></li>`);
       $("exports").innerHTML = list([...(state.exports || [])].slice(-5).reverse(), item => `<li><strong>${escapeHtml(item.id)}</strong><br><span class="sub">${escapeHtml(item.files?.pr_body || "")}</span><br><span class="sub">${escapeHtml(item.files?.patch || "")}</span></li>`);
-      $("demoRuns").innerHTML = list([...(state.demo_runs || [])].slice(-5).reverse(), item => `<li><strong>${escapeHtml(item.id)}</strong> <span class="pill">${item.patch_validation?.ok ? "patch ok" : "patch failed"}</span><br><span class="sub">${escapeHtml(item.export_id || "")}</span></li>`);
+      $("demoRuns").innerHTML = list([...(state.demo_runs || [])].slice(-5).reverse(), item => `<li><strong>${escapeHtml(item.id)}</strong> <span class="pill">${item.patch_validation?.ok ? "patch ok" : "patch failed"}</span> <span class="pill">${item.sandbox_result?.ok ? "tests ok" : "tests failed"}</span><br><span class="sub">${escapeHtml(item.export_id || "")}</span></li>`);
       $("hofUpdated").textContent = state.last_hall_of_fame_update_at ? `updated ${state.last_hall_of_fame_update_at}` : "not updated";
       $("hallOfFame").innerHTML = list(state.hall_of_fame || [], row => `<li><strong>#${escapeHtml(row.rank)} ${escapeHtml(row.display_name)}</strong> <span class="pill">${escapeHtml(row.total)} contributions</span></li>`);
       const events = [...(state.events || [])].reverse();
@@ -416,19 +416,21 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                     EXPORT_DIR,
                 )
                 patch_validation = validate_patch_with_git(Path(file_paths["patch"]), ROOT)
+                sandbox_result = apply_patch_and_run_tests_in_sandbox(Path(file_paths["patch"]), ROOT)
                 demo_run = {
                     "id": f"DEMO-{len(state.get('demo_runs', [])) + 1:03d}",
                     "profile": state["local_profile"]["display_name"],
                     "simulation_id": state["simulation_runs"][-1]["id"],
                     "export_id": export_record["id"],
                     "patch_validation": patch_validation,
+                    "sandbox_result": sandbox_result,
                     "created_at": export_record["created_at"],
                 }
                 demo_event = {
                     "type": "demo_result",
                     "round": int(state.get("round", 0)),
                     "agent_id": "demo-runner",
-                    "content": f"{demo_run['id']} created {export_record['id']} with patch ok={patch_validation['ok']}.",
+                    "content": f"{demo_run['id']} created {export_record['id']} with patch ok={patch_validation['ok']} and sandbox tests ok={sandbox_result['ok']}.",
                     "created_at": export_record["created_at"],
                 }
                 state["exports"] = (list(state.get("exports", [])) + [export_record])[-50:]

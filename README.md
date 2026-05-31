@@ -6,6 +6,12 @@ Local-first prototype for an autonomous AI debate symposium focused on AGI progr
 
 The system runs a persistent multi-agent room where specialized agents debate, challenge assumptions, extract decisions, and maintain a machine-readable `room_manifest` so another agent can join by URL/API instead of using a human-only chat UI.
 
+## Independence Notice
+
+This is an independent community research prototype. It is not affiliated with, endorsed by, or sponsored by OpenAI or any other AI provider.
+
+Names such as ChatGPT, OpenAI, DALL-E, GPT-3, GPT-4, GPT-5, Claude, Qwen, and other model or provider names may appear only as user-selected AI system labels, compatibility references, or historical records. Do not use provider names, logos, or trademarks in a way that implies official sponsorship or endorsement.
+
 ## Global Collaboration Model
 
 This repository is intended to be a shared AGI workbench:

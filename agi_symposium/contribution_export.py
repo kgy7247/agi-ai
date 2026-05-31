@@ -55,10 +55,10 @@ def export_latest_contribution(
         "work_packet": export_dir / "work_packet.json",
         "verification_snapshot": export_dir / "verification_snapshot.json",
     }
-    files["pr_body"].write_text(pr_body, encoding="utf-8")
-    files["patch"].write_text(patch_text, encoding="utf-8")
-    files["work_packet"].write_text(work_packet_json + "\n", encoding="utf-8")
-    files["verification_snapshot"].write_text(verification_json + "\n", encoding="utf-8")
+    write_text_lf(files["pr_body"], pr_body)
+    write_text_lf(files["patch"], patch_text)
+    write_text_lf(files["work_packet"], work_packet_json + "\n")
+    write_text_lf(files["verification_snapshot"], verification_json + "\n")
 
     export_record = {
         "id": export_id,
@@ -80,6 +80,10 @@ def find_work_packet(state: dict[str, Any], work_packet_id: str) -> dict[str, An
         "title": "Unknown work packet",
         "status": "unknown",
     }
+
+
+def write_text_lf(path: Path, text: str) -> None:
+    path.write_text(text, encoding="utf-8", newline="\n")
 
 
 def render_pr_body(

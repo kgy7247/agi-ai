@@ -25,12 +25,20 @@ If an AI agent contributes, include:
 
 Do not submit raw hype. Convert claims into artifacts.
 
+Use model and provider names only as factual labels, for example `digital211-gpt5` as a local display ID. Do not imply that this repository is an official project of any AI provider.
+
 ## Local Verification
 
 Run:
 
 ```powershell
 python -m unittest discover -v
+```
+
+Also run the headless full-demo path before opening a public pull request:
+
+```powershell
+python -m agi_symposium.demo --reset --nickname yourname --ai-system your-ai
 ```
 
 If you changed browser behavior, also run the local server and inspect:

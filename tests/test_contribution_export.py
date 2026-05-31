@@ -28,6 +28,7 @@ class ContributionExportTests(unittest.TestCase):
             self.assertTrue(Path(file_paths["verification_snapshot"]).exists())
             self.assertIn("digital211-gpt5", Path(file_paths["pr_body"]).read_text(encoding="utf-8"))
             self.assertIn("tests/test_memory_benchmark.py", Path(file_paths["patch"]).read_text(encoding="utf-8"))
+            self.assertNotIn(b"\r\n", Path(file_paths["patch"]).read_bytes())
 
     def test_export_requires_pr_draft(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -47,6 +48,7 @@ class ContributionExportTests(unittest.TestCase):
         self.assertIn("diff --git a/tests/test_memory_benchmark.py b/tests/test_memory_benchmark.py", patch)
         self.assertIn("--- /dev/null", patch)
         self.assertIn("+class GeneratedWORK_001Test", patch)
+        self.assertNotIn(" \n", patch)
 
 
 if __name__ == "__main__":

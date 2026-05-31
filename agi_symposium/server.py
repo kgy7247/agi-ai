@@ -13,6 +13,7 @@ from .demo import run_full_demo
 from .engine import accept_contribution, run_round
 from .identity import display_name, rebuild_hall_of_fame, record_contribution, set_local_profile
 from .manifest import room_manifest
+from .nodes import register_ai_node
 from .simulation import ensure_simulation_state, run_global_collaboration_simulation
 from .storage import EXPORT_DIR, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
 from .verification import append_verification, make_verification_record, read_ledger, verify_ledger
@@ -336,6 +337,9 @@ class SymposiumHandler(BaseHTTPRequestHandler):
         elif path == "/api/exports":
             state = ensure_simulation_state(load_state())
             self.send_json({"exports": state.get("exports", [])})
+        elif path == "/api/nodes":
+            state = ensure_simulation_state(load_state())
+            self.send_json({"ai_nodes": state.get("ai_nodes", [])})
         elif path == "/room_manifest":
             self.send_json(room_manifest(load_state()))
         elif path == "/api/verification":
@@ -385,6 +389,25 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                         "hall_of_fame": state.get("hall_of_fame", []),
                     }
                 )
+            elif path == "/api/nodes/register":
+                body = self.read_json()
+                state = set_local_profile(
+                    load_state(),
+                    str(body.get("nickname") or "digital211"),
+                    str(body.get("ai_system") or "gpt5"),
+                )
+                state = register_ai_node(
+                    state,
+                    nickname=str(body.get("nickname") or "digital211"),
+                    ai_system=str(body.get("ai_system") or "gpt5"),
+                    node_type=str(body.get("node_type") or "local_llm"),
+                    endpoint=str(body.get("endpoint") or ""),
+                    capabilities=list(body.get("capabilities") or []),
+                )
+                state = record_contribution(state, display_name(state["local_profile"]), "node_registration")
+                state = rebuild_hall_of_fame(state)
+                save_state(state)
+                self.send_json({"accepted": True, "node": state["ai_nodes"][-1], "state": state})
             elif path == "/api/export/latest":
                 state = ensure_simulation_state(load_state())
                 export_record, file_paths = export_latest_contribution(

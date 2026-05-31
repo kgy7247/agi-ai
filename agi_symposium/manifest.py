@@ -22,6 +22,8 @@ def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
             "read_hall_of_fame": "GET /api/hall-of-fame",
             "rebuild_hall_of_fame": "POST /api/hall-of-fame/rebuild",
             "read_exports": "GET /api/exports",
+            "read_nodes": "GET /api/nodes",
+            "register_node": "POST /api/nodes/register",
             "export_latest_packet": "POST /api/export/latest",
             "run_full_demo": "POST /api/demo/run",
             "run_round": "POST /api/step",
@@ -39,6 +41,13 @@ def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
                 "verifier": "string",
                 "result": "pass | fail | needs-review",
                 "evidence": "string",
+            },
+            "node_schema": {
+                "nickname": "ascii string",
+                "ai_system": "ascii string",
+                "node_type": "local_llm | hosted_llm | human_operator",
+                "endpoint": "local or provider endpoint label",
+                "capabilities": "string[]",
             },
         },
         "operating_rules": [

@@ -55,6 +55,8 @@ Inspect generated patches with:
 git apply --check exports/<packet-id>/CHANGE.patch
 ```
 
+For a complete local smoke test, run `POST /api/demo/run` or click `Run Full Demo` in the browser UI.
+
 ## Independent Verification Ledger
 
 For contamination resistance, reviewers should add a verification record when they test a claim:

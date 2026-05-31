@@ -109,6 +109,7 @@ def initial_state() -> dict[str, Any]:
         "simulation_runs": [],
         "pr_drafts": [],
         "exports": [],
+        "demo_runs": [],
         "scorecard": {
             "persistent memory": {"pass": 0, "fail": 0, "needs-review": 0},
             "self-correction": {"pass": 0, "fail": 0, "needs-review": 0},

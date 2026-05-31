@@ -4,6 +4,7 @@ import argparse
 import json
 import threading
 import time
+from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import urlparse
@@ -13,8 +14,9 @@ from .engine import accept_contribution, run_round
 from .identity import display_name, rebuild_hall_of_fame, record_contribution, set_local_profile
 from .manifest import room_manifest
 from .simulation import ensure_simulation_state, run_global_collaboration_simulation
-from .storage import EXPORT_DIR, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
+from .storage import EXPORT_DIR, ROOT, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
 from .verification import append_verification, make_verification_record, read_ledger, verify_ledger
+from .workflow import validate_patch_with_git
 
 
 INDEX_HTML = """<!doctype html>
@@ -140,6 +142,7 @@ INDEX_HTML = """<!doctype html>
     </div>
     <div class="toolbar">
       <button class="primary" id="stepBtn">Run Round</button>
+      <button class="primary" id="demoBtn">Run Full Demo</button>
       <button class="primary" id="simulateBtn">Simulate Global Loop</button>
       <button id="exportBtn">Export Packet</button>
       <button id="resetBtn">Reset</button>
@@ -186,6 +189,10 @@ INDEX_HTML = """<!doctype html>
       <div class="block">
         <h2>Exports</h2>
         <ul id="exports"></ul>
+      </div>
+      <div class="block">
+        <h2>Demo Runs</h2>
+        <ul id="demoRuns"></ul>
       </div>
       <div class="block">
         <h2>Verification Ledger</h2>
@@ -235,6 +242,7 @@ INDEX_HTML = """<!doctype html>
       $("scorecard").innerHTML = Object.entries(state.scorecard || {}).map(([name, score]) => `<li><strong>${escapeHtml(name)}</strong> pass ${score.pass || 0}, fail ${score.fail || 0}, review ${score["needs-review"] || 0}</li>`).join("");
       $("prDrafts").innerHTML = list([...(state.pr_drafts || [])].slice(-5).reverse(), draft => `<li><strong>${escapeHtml(draft.id)}</strong> ${escapeHtml(draft.title)} <span class="sub">${escapeHtml(draft.branch)}</span></li>`);
       $("exports").innerHTML = list([...(state.exports || [])].slice(-5).reverse(), item => `<li><strong>${escapeHtml(item.id)}</strong><br><span class="sub">${escapeHtml(item.files?.pr_body || "")}</span><br><span class="sub">${escapeHtml(item.files?.patch || "")}</span></li>`);
+      $("demoRuns").innerHTML = list([...(state.demo_runs || [])].slice(-5).reverse(), item => `<li><strong>${escapeHtml(item.id)}</strong> <span class="pill">${item.patch_validation?.ok ? "patch ok" : "patch failed"}</span><br><span class="sub">${escapeHtml(item.export_id || "")}</span></li>`);
       $("hofUpdated").textContent = state.last_hall_of_fame_update_at ? `updated ${state.last_hall_of_fame_update_at}` : "not updated";
       $("hallOfFame").innerHTML = list(state.hall_of_fame || [], row => `<li><strong>#${escapeHtml(row.rank)} ${escapeHtml(row.display_name)}</strong> <span class="pill">${escapeHtml(row.total)} contributions</span></li>`);
       const events = [...(state.events || [])].reverse();
@@ -271,6 +279,11 @@ INDEX_HTML = """<!doctype html>
       }
     }
     $("stepBtn").onclick = () => busy($("stepBtn"), () => api("/api/step", { method: "POST" }));
+    $("demoBtn").onclick = () => busy($("demoBtn"), () => api("/api/demo/run", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nickname: $("nickname").value, ai_system: $("aiSystem").value })
+    }));
     $("simulateBtn").onclick = () => busy($("simulateBtn"), () => api("/api/simulate", { method: "POST" }));
     $("exportBtn").onclick = () => busy($("exportBtn"), () => api("/api/export/latest", { method: "POST" }));
     $("resetBtn").onclick = () => busy($("resetBtn"), () => api("/api/reset", { method: "POST" }));
@@ -385,6 +398,57 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                 state = rebuild_hall_of_fame(state)
                 save_state(state)
                 self.send_json({"accepted": True, "export": export_record, "file_paths": file_paths, "state": state})
+            elif path == "/api/demo/run":
+                body = self.read_json()
+                state = set_local_profile(
+                    load_state(),
+                    str(body.get("nickname") or "digital211"),
+                    str(body.get("ai_system") or "gpt5"),
+                )
+                state, events, verification_specs = run_global_collaboration_simulation(state)
+                saved_records = []
+                for spec in verification_specs:
+                    record = make_verification_record(**spec)
+                    saved_records.append(append_verification(VERIFICATION_LEDGER_PATH, record))
+                export_record, file_paths = export_latest_contribution(
+                    state,
+                    read_ledger(VERIFICATION_LEDGER_PATH),
+                    EXPORT_DIR,
+                )
+                patch_validation = validate_patch_with_git(Path(file_paths["patch"]), ROOT)
+                demo_run = {
+                    "id": f"DEMO-{len(state.get('demo_runs', [])) + 1:03d}",
+                    "profile": state["local_profile"]["display_name"],
+                    "simulation_id": state["simulation_runs"][-1]["id"],
+                    "export_id": export_record["id"],
+                    "patch_validation": patch_validation,
+                    "created_at": export_record["created_at"],
+                }
+                demo_event = {
+                    "type": "demo_result",
+                    "round": int(state.get("round", 0)),
+                    "agent_id": "demo-runner",
+                    "content": f"{demo_run['id']} created {export_record['id']} with patch ok={patch_validation['ok']}.",
+                    "created_at": export_record["created_at"],
+                }
+                state["exports"] = (list(state.get("exports", [])) + [export_record])[-50:]
+                state["demo_runs"] = (list(state.get("demo_runs", [])) + [demo_run])[-50:]
+                state["events"] = (list(state.get("events", [])) + [demo_event])[-100:]
+                state = record_contribution(state, str(export_record.get("contributor") or ""), "export")
+                state = record_contribution(state, state["local_profile"]["display_name"], "demo_run")
+                state = rebuild_hall_of_fame(state)
+                save_state(state)
+                append_events(events + [demo_event])
+                self.send_json(
+                    {
+                        "accepted": True,
+                        "demo_run": demo_run,
+                        "export": export_record,
+                        "file_paths": file_paths,
+                        "verification_records": saved_records,
+                        "state": state,
+                    }
+                )
             elif path == "/api/contribute":
                 body = self.read_json()
                 state = load_state()

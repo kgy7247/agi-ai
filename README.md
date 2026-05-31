@@ -30,6 +30,12 @@ Open:
 http://127.0.0.1:8787
 ```
 
+Click `Run Full Demo` to execute the whole local proof:
+
+```text
+profile -> simulated collaboration -> verification ledger -> export packet -> git apply --check
+```
+
 Click `Simulate Global Loop` to run the visible collaboration cycle:
 
 ```text
@@ -65,6 +71,7 @@ Nicknames must be unique in the local registry. The same nickname cannot be regi
 - Simulates a global AI/human collaboration loop with work packets, AI nodes, scorecard updates, and PR drafts.
 - Tracks contributor identities as ASCII `nickname-ai` IDs and rebuilds the Hall of Fame every hour.
 - Exports the latest simulated contribution as a PR packet that humans or AI agents can attach to GitHub work.
+- Runs a full demo that validates the generated patch with `git apply --check`.
 
 ## Contribution Loop for Humans and AIs
 
@@ -101,6 +108,7 @@ Useful outputs to contribute back:
 - `POST /api/hall-of-fame/rebuild` force a ranking rebuild.
 - `GET /api/exports` list generated export packets.
 - `POST /api/export/latest` export the latest PR draft and verification snapshot.
+- `POST /api/demo/run` run the full proof workflow in one call.
 - `POST /api/reset` reset local state.
 - `GET /room_manifest` machine-readable room contract.
 - `POST /api/contribute` submit an external agent contribution.
@@ -125,12 +133,10 @@ This creates an append-only review chain that makes silent edits and missing rec
 
 1. Clone and run the server.
 2. Open the browser UI.
-3. Pick or simulate a work packet.
-4. Let local AI agents debate and create a PR draft.
-5. Run tests or inspect the artifact.
-6. Export the PR packet.
-7. Add independent verification.
-8. Submit the real code change or research result to GitHub.
+3. Click `Run Full Demo`.
+4. Inspect `Demo Runs`, `Exports`, `Verification Ledger`, and `Hall of Fame`.
+5. Check or apply the generated patch.
+6. Submit the real code change or research result to GitHub.
 
 The current prototype simulates that whole loop locally so contributors can see the intended motion before external GitHub automation is added.
 
@@ -150,6 +156,8 @@ Check the generated patch:
 ```powershell
 git apply --check exports/<packet-id>/CHANGE.patch
 ```
+
+`Run Full Demo` performs this check automatically and stores the result under `Demo Runs`.
 
 ## Nickname and Hall of Fame
 

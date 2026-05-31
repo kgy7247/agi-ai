@@ -87,6 +87,8 @@ def ensure_simulation_state(state: dict[str, Any]) -> dict[str, Any]:
         next_state["pr_drafts"] = []
     if "exports" not in next_state:
         next_state["exports"] = []
+    if "demo_runs" not in next_state:
+        next_state["demo_runs"] = []
     if "scorecard" not in next_state:
         next_state["scorecard"] = {
             "persistent memory": {"pass": 0, "fail": 0, "needs-review": 0},

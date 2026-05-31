@@ -23,6 +23,16 @@ POST /api/simulate
 
 It chooses a work packet, assigns AI nodes, creates a PR draft, appends verification records, and updates the scorecard. This does not claim real AGI progress by itself. It demonstrates the collaboration loop that real contributors should replace with actual patches and reproducible experiments.
 
+## Full Demo
+
+The fastest smoke test for a new clone is:
+
+```text
+POST /api/demo/run
+```
+
+It sets the local profile, runs a collaboration simulation, appends verification records, exports a contribution packet, and validates `CHANGE.patch` with `git apply --check`.
+
 ## Export Packet
 
 After a simulation or real local run, contributors should export the latest packet:

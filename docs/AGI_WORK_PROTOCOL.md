@@ -31,6 +31,12 @@ The fastest smoke test for a new clone is:
 POST /api/demo/run
 ```
 
+or:
+
+```powershell
+python -m agi_symposium.demo --reset --nickname digital211 --ai-system gpt5
+```
+
 It sets the local profile, runs a collaboration simulation, appends verification records, exports a contribution packet, validates `CHANGE.patch` with `git apply --check`, applies it inside a temporary sandbox copy, and runs tests there.
 
 ## Export Packet

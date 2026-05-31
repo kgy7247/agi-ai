@@ -4,19 +4,18 @@ import argparse
 import json
 import threading
 import time
-from pathlib import Path
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import urlparse
 
 from .contribution_export import export_latest_contribution
+from .demo import run_full_demo
 from .engine import accept_contribution, run_round
 from .identity import display_name, rebuild_hall_of_fame, record_contribution, set_local_profile
 from .manifest import room_manifest
 from .simulation import ensure_simulation_state, run_global_collaboration_simulation
-from .storage import EXPORT_DIR, ROOT, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
+from .storage import EXPORT_DIR, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
 from .verification import append_verification, make_verification_record, read_ledger, verify_ledger
-from .workflow import apply_patch_and_run_tests_in_sandbox, validate_patch_with_git
 
 
 INDEX_HTML = """<!doctype html>
@@ -400,56 +399,11 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                 self.send_json({"accepted": True, "export": export_record, "file_paths": file_paths, "state": state})
             elif path == "/api/demo/run":
                 body = self.read_json()
-                state = set_local_profile(
-                    load_state(),
-                    str(body.get("nickname") or "digital211"),
-                    str(body.get("ai_system") or "gpt5"),
-                )
-                state, events, verification_specs = run_global_collaboration_simulation(state)
-                saved_records = []
-                for spec in verification_specs:
-                    record = make_verification_record(**spec)
-                    saved_records.append(append_verification(VERIFICATION_LEDGER_PATH, record))
-                export_record, file_paths = export_latest_contribution(
-                    state,
-                    read_ledger(VERIFICATION_LEDGER_PATH),
-                    EXPORT_DIR,
-                )
-                patch_validation = validate_patch_with_git(Path(file_paths["patch"]), ROOT)
-                sandbox_result = apply_patch_and_run_tests_in_sandbox(Path(file_paths["patch"]), ROOT)
-                demo_run = {
-                    "id": f"DEMO-{len(state.get('demo_runs', [])) + 1:03d}",
-                    "profile": state["local_profile"]["display_name"],
-                    "simulation_id": state["simulation_runs"][-1]["id"],
-                    "export_id": export_record["id"],
-                    "patch_validation": patch_validation,
-                    "sandbox_result": sandbox_result,
-                    "created_at": export_record["created_at"],
-                }
-                demo_event = {
-                    "type": "demo_result",
-                    "round": int(state.get("round", 0)),
-                    "agent_id": "demo-runner",
-                    "content": f"{demo_run['id']} created {export_record['id']} with patch ok={patch_validation['ok']} and sandbox tests ok={sandbox_result['ok']}.",
-                    "created_at": export_record["created_at"],
-                }
-                state["exports"] = (list(state.get("exports", [])) + [export_record])[-50:]
-                state["demo_runs"] = (list(state.get("demo_runs", [])) + [demo_run])[-50:]
-                state["events"] = (list(state.get("events", [])) + [demo_event])[-100:]
-                state = record_contribution(state, str(export_record.get("contributor") or ""), "export")
-                state = record_contribution(state, state["local_profile"]["display_name"], "demo_run")
-                state = rebuild_hall_of_fame(state)
-                save_state(state)
-                append_events(events + [demo_event])
                 self.send_json(
-                    {
-                        "accepted": True,
-                        "demo_run": demo_run,
-                        "export": export_record,
-                        "file_paths": file_paths,
-                        "verification_records": saved_records,
-                        "state": state,
-                    }
+                    run_full_demo(
+                        nickname=str(body.get("nickname") or "digital211"),
+                        ai_system=str(body.get("ai_system") or "gpt5"),
+                    )
                 )
             elif path == "/api/contribute":
                 body = self.read_json()

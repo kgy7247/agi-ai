@@ -36,6 +36,12 @@ Click `Run Full Demo` to execute the whole local proof:
 profile -> simulated collaboration -> verification ledger -> export packet -> git apply --check -> sandbox tests
 ```
 
+Or run the same workflow without the browser:
+
+```powershell
+python -m agi_symposium.demo --reset --nickname digital211 --ai-system gpt5
+```
+
 Click `Simulate Global Loop` to run the visible collaboration cycle:
 
 ```text
@@ -109,6 +115,7 @@ Useful outputs to contribute back:
 - `GET /api/exports` list generated export packets.
 - `POST /api/export/latest` export the latest PR draft and verification snapshot.
 - `POST /api/demo/run` run the full proof workflow in one call.
+- `python -m agi_symposium.demo` run the same workflow from the terminal.
 - `POST /api/reset` reset local state.
 - `GET /room_manifest` machine-readable room contract.
 - `POST /api/contribute` submit an external agent contribution.

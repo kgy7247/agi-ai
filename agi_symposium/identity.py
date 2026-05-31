@@ -16,7 +16,7 @@ def now_iso() -> str:
 
 
 def clean_identity_part(value: str, fallback: str) -> str:
-    cleaned = re.sub(r"[^0-9A-Za-z가-힣_.-]+", "-", value.strip()).strip("-")
+    cleaned = re.sub(r"[^0-9A-Za-z_.-]+", "-", value.strip()).strip("-")
     return (cleaned or fallback)[:48]
 
 
@@ -32,7 +32,7 @@ def make_profile(nickname: str, ai_system: str) -> dict[str, str]:
 def display_name(profile: dict[str, Any]) -> str:
     nickname = clean_identity_part(str(profile.get("nickname") or ""), DEFAULT_PROFILE["nickname"])
     ai_system = clean_identity_part(str(profile.get("ai_system") or ""), DEFAULT_PROFILE["ai_system"])
-    return f"{nickname}님의{ai_system}"
+    return f"{nickname}-{ai_system}"
 
 
 def ensure_identity_state(state: dict[str, Any]) -> dict[str, Any]:
@@ -128,4 +128,3 @@ def seconds_since(iso_value: str) -> float:
     if then.tzinfo is None:
         then = then.replace(tzinfo=timezone.utc)
     return (datetime.now(timezone.utc) - then).total_seconds()
-

@@ -85,6 +85,8 @@ def ensure_simulation_state(state: dict[str, Any]) -> dict[str, Any]:
         next_state["simulation_runs"] = []
     if "pr_drafts" not in next_state:
         next_state["pr_drafts"] = []
+    if "exports" not in next_state:
+        next_state["exports"] = []
     if "scorecard" not in next_state:
         next_state["scorecard"] = {
             "persistent memory": {"pass": 0, "fail": 0, "needs-review": 0},
@@ -114,7 +116,7 @@ def run_global_collaboration_simulation(state: dict[str, Any]) -> tuple[dict[str
     update_packet(packet, result_counts, simulated_patch)
     update_scorecard(next_state["scorecard"], packet["capability"], result_counts)
     next_state = record_contribution(next_state, primary_contributor, "pr_draft")
-    next_state = record_contribution(next_state, "maintainer님의reviewer", "maintainer_review")
+    next_state = record_contribution(next_state, "maintainer-reviewer", "maintainer_review")
     for spec in verification_specs:
         next_state = record_contribution(next_state, spec["verifier"], "verification")
     next_state = rebuild_hall_of_fame(next_state)
@@ -221,15 +223,15 @@ def make_node_events(
             f"Implemented draft {pr_draft['id']} for {packet['id']} and attached test command: {pr_draft['test_command']}.",
         ),
         (
-            "reviewer님의claude",
+            "reviewer-claude",
             f"Reviewed {packet['claim']} and required concrete failure criteria before merge.",
         ),
         (
-            "reproducer님의local-qwen",
+            "reproducer-local-qwen",
             f"Repeated the proposed workflow from a clean clone and checked {packet['expected_artifact']}.",
         ),
         (
-            "maintainer님의reviewer",
+            "maintainer-reviewer",
             f"Marked {packet['id']} mergeable only after at least two independent pass records and zero fail records.",
         ),
     ]
@@ -261,14 +263,14 @@ def make_verification_specs(
         {
             "claim": packet["claim"],
             "artifact": packet["expected_artifact"],
-            "verifier": "reviewer님의claude",
+            "verifier": "reviewer-claude",
             "result": "needs-review",
             "evidence": "Reviewer found the artifact shape useful but requested independent reproduction.",
         },
         {
             "claim": packet["claim"],
             "artifact": packet["expected_artifact"],
-            "verifier": "reproducer님의local-qwen",
+            "verifier": "reproducer-local-qwen",
             "result": "pass",
             "evidence": "Clean-node simulation reached the same expected artifact and verification command.",
         },

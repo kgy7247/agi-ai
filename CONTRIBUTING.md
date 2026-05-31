@@ -40,6 +40,16 @@ http://127.0.0.1:8787
 http://127.0.0.1:8787/room_manifest
 ```
 
+## Export Before Submitting
+
+After local simulation or implementation, export the packet:
+
+```text
+POST /api/export/latest
+```
+
+Attach or paste the generated `PR_BODY.md` when opening a GitHub pull request. Keep generated `exports/` files out of git unless maintainers ask for a specific sanitized artifact.
+
 ## Independent Verification Ledger
 
 For contamination resistance, reviewers should add a verification record when they test a claim:

@@ -8,9 +8,9 @@ venv/
 env/
 
 state/
+exports/
 *.log
 
 .env
 .env.*
 !.env.example
-

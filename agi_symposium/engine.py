@@ -101,6 +101,7 @@ def initial_state() -> dict[str, Any]:
         "work_packets": [dict(packet) for packet in DEFAULT_WORK_PACKETS],
         "simulation_runs": [],
         "pr_drafts": [],
+        "exports": [],
         "scorecard": {
             "persistent memory": {"pass": 0, "fail": 0, "needs-review": 0},
             "self-correction": {"pass": 0, "fail": 0, "needs-review": 0},

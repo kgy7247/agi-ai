@@ -9,6 +9,7 @@ from .engine import initial_state
 
 ROOT = Path(__file__).resolve().parents[1]
 STATE_DIR = ROOT / "state"
+EXPORT_DIR = ROOT / "exports"
 STATE_PATH = STATE_DIR / "symposium_state.json"
 TRANSCRIPT_PATH = STATE_DIR / "transcript.jsonl"
 VERIFICATION_LEDGER_PATH = STATE_DIR / "verification_ledger.jsonl"

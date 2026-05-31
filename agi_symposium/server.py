@@ -8,11 +8,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 from urllib.parse import urlparse
 
+from .contribution_export import export_latest_contribution
 from .engine import accept_contribution, run_round
 from .identity import display_name, rebuild_hall_of_fame, record_contribution, set_local_profile
 from .manifest import room_manifest
 from .simulation import ensure_simulation_state, run_global_collaboration_simulation
-from .storage import VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
+from .storage import EXPORT_DIR, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
 from .verification import append_verification, make_verification_record, read_ledger, verify_ledger
 
 
@@ -133,6 +134,7 @@ INDEX_HTML = """<!doctype html>
     <div class="toolbar">
       <button class="primary" id="stepBtn">Run Round</button>
       <button class="primary" id="simulateBtn">Simulate Global Loop</button>
+      <button id="exportBtn">Export Packet</button>
       <button id="resetBtn">Reset</button>
       <button id="manifestBtn">Manifest</button>
     </div>
@@ -146,7 +148,7 @@ INDEX_HTML = """<!doctype html>
       <div class="block">
         <h2>Local Contributor</h2>
         <div class="label">Display</div>
-        <div class="value" id="profileDisplay">digital211님의gpt5</div>
+        <div class="value" id="profileDisplay">digital211-gpt5</div>
         <div class="label">Nickname</div>
         <input id="nickname" value="digital211" />
         <div class="label">AI System</div>
@@ -172,6 +174,10 @@ INDEX_HTML = """<!doctype html>
       <div class="block">
         <h2>PR Drafts</h2>
         <ul id="prDrafts"></ul>
+      </div>
+      <div class="block">
+        <h2>Exports</h2>
+        <ul id="exports"></ul>
       </div>
       <div class="block">
         <h2>Verification Ledger</h2>
@@ -209,7 +215,7 @@ INDEX_HTML = """<!doctype html>
       $("round").textContent = state.round ?? 0;
       $("status").textContent = state.status ?? "idle";
       const profile = state.local_profile || {};
-      $("profileDisplay").textContent = profile.display_name || `${profile.nickname || "digital211"}님의${profile.ai_system || "gpt5"}`;
+      $("profileDisplay").textContent = profile.display_name || `${profile.nickname || "digital211"}-${profile.ai_system || "gpt5"}`;
       $("nickname").value = profile.nickname || "digital211";
       $("aiSystem").value = profile.ai_system || "gpt5";
       $("questions").innerHTML = list(state.open_questions || [], q => `<li>${escapeHtml(q)}</li>`);
@@ -217,6 +223,7 @@ INDEX_HTML = """<!doctype html>
       $("workPackets").innerHTML = list(state.work_packets || [], item => `<li><strong>${escapeHtml(item.id)}</strong> ${escapeHtml(item.title)} <span class="pill">${escapeHtml(item.status)}</span></li>`);
       $("scorecard").innerHTML = Object.entries(state.scorecard || {}).map(([name, score]) => `<li><strong>${escapeHtml(name)}</strong> pass ${score.pass || 0}, fail ${score.fail || 0}, review ${score["needs-review"] || 0}</li>`).join("");
       $("prDrafts").innerHTML = list([...(state.pr_drafts || [])].slice(-5).reverse(), draft => `<li><strong>${escapeHtml(draft.id)}</strong> ${escapeHtml(draft.title)} <span class="sub">${escapeHtml(draft.branch)}</span></li>`);
+      $("exports").innerHTML = list([...(state.exports || [])].slice(-5).reverse(), item => `<li><strong>${escapeHtml(item.id)}</strong><br><span class="sub">${escapeHtml(item.files?.pr_body || "")}</span></li>`);
       $("hofUpdated").textContent = state.last_hall_of_fame_update_at ? `updated ${state.last_hall_of_fame_update_at}` : "not updated";
       $("hallOfFame").innerHTML = list(state.hall_of_fame || [], row => `<li><strong>#${escapeHtml(row.rank)} ${escapeHtml(row.display_name)}</strong> <span class="pill">${escapeHtml(row.total)} contributions</span></li>`);
       const events = [...(state.events || [])].reverse();
@@ -243,6 +250,7 @@ INDEX_HTML = """<!doctype html>
     }
     $("stepBtn").onclick = () => busy($("stepBtn"), () => api("/api/step", { method: "POST" }));
     $("simulateBtn").onclick = () => busy($("simulateBtn"), () => api("/api/simulate", { method: "POST" }));
+    $("exportBtn").onclick = () => busy($("exportBtn"), () => api("/api/export/latest", { method: "POST" }));
     $("resetBtn").onclick = () => busy($("resetBtn"), () => api("/api/reset", { method: "POST" }));
     $("profileBtn").onclick = () => busy($("profileBtn"), () => api("/api/profile", {
       method: "POST",
@@ -288,6 +296,9 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                     "hall_of_fame": state.get("hall_of_fame", []),
                 }
             )
+        elif path == "/api/exports":
+            state = ensure_simulation_state(load_state())
+            self.send_json({"exports": state.get("exports", [])})
         elif path == "/room_manifest":
             self.send_json(room_manifest(load_state()))
         elif path == "/api/verification":
@@ -337,6 +348,18 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                         "hall_of_fame": state.get("hall_of_fame", []),
                     }
                 )
+            elif path == "/api/export/latest":
+                state = ensure_simulation_state(load_state())
+                export_record, file_paths = export_latest_contribution(
+                    state,
+                    read_ledger(VERIFICATION_LEDGER_PATH),
+                    EXPORT_DIR,
+                )
+                state["exports"] = (list(state.get("exports", [])) + [export_record])[-50:]
+                state = record_contribution(state, str(export_record.get("contributor") or ""), "export")
+                state = rebuild_hall_of_fame(state)
+                save_state(state)
+                self.send_json({"accepted": True, "export": export_record, "file_paths": file_paths, "state": state})
             elif path == "/api/contribute":
                 body = self.read_json()
                 state = load_state()

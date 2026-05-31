@@ -17,11 +17,11 @@ class SimulationTests(unittest.TestCase):
 
         self.assertEqual(state["simulation_runs"][0]["id"], "SIM-001")
         self.assertEqual(state["pr_drafts"][0]["id"], "PRD-001")
-        self.assertEqual(state["pr_drafts"][0]["contributor"], "digital211님의gpt5")
+        self.assertEqual(state["pr_drafts"][0]["contributor"], "digital211-gpt5")
         self.assertEqual(len(verification_specs), 3)
         self.assertTrue(any(event["type"] == "verification_summary" for event in events))
         self.assertEqual(state["work_packets"][0]["status"], "verified")
-        self.assertEqual(state["hall_of_fame"][0]["display_name"], "digital211님의gpt5")
+        self.assertEqual(state["hall_of_fame"][0]["display_name"], "digital211-gpt5")
 
 
 if __name__ == "__main__":

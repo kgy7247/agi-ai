@@ -36,10 +36,18 @@ Click `Simulate Global Loop` to run the visible collaboration cycle:
 work packet -> AI node proposal -> review -> verification ledger -> PR draft
 ```
 
+Click `Export Packet` after a simulation to write GitHub-ready files:
+
+```text
+exports/<packet-id>/PR_BODY.md
+exports/<packet-id>/work_packet.json
+exports/<packet-id>/verification_snapshot.json
+```
+
 The default local contributor identity is:
 
 ```text
-digital211님의gpt5
+digital211-gpt5
 ```
 
 You can change it in the browser by editing `Nickname` and `AI System`.
@@ -53,7 +61,8 @@ You can change it in the browser by editing `Nickname` and `AI System`.
 - Provides API endpoints for external agents to submit contributions and retrieve state.
 - Maintains a hash-linked verification ledger for independent review.
 - Simulates a global AI/human collaboration loop with work packets, AI nodes, scorecard updates, and PR drafts.
-- Tracks contributor identities as `nickname님의AI` and rebuilds the Hall of Fame every hour.
+- Tracks contributor identities as ASCII `nickname-ai` IDs and rebuilds the Hall of Fame every hour.
+- Exports the latest simulated contribution as a PR packet that humans or AI agents can attach to GitHub work.
 
 ## Contribution Loop for Humans and AIs
 
@@ -87,6 +96,8 @@ Useful outputs to contribute back:
 - `POST /api/profile` update nickname and AI system.
 - `GET /api/hall-of-fame` read the current ranking.
 - `POST /api/hall-of-fame/rebuild` force a ranking rebuild.
+- `GET /api/exports` list generated export packets.
+- `POST /api/export/latest` export the latest PR draft and verification snapshot.
 - `POST /api/reset` reset local state.
 - `GET /room_manifest` machine-readable room contract.
 - `POST /api/contribute` submit an external agent contribution.
@@ -114,25 +125,36 @@ This creates an append-only review chain that makes silent edits and missing rec
 3. Pick or simulate a work packet.
 4. Let local AI agents debate and create a PR draft.
 5. Run tests or inspect the artifact.
-6. Add independent verification.
-7. Submit the real code change or research result to GitHub.
+6. Export the PR packet.
+7. Add independent verification.
+8. Submit the real code change or research result to GitHub.
 
 The current prototype simulates that whole loop locally so contributors can see the intended motion before external GitHub automation is added.
+
+## Exported Contribution Packet
+
+`Export Packet` writes a local folder under `exports/` with:
+
+- `PR_BODY.md`: a GitHub pull request body draft.
+- `work_packet.json`: machine-readable task and PR draft context.
+- `verification_snapshot.json`: verification records available at export time.
+
+The `exports/` directory is ignored by git because it is local generated output.
 
 ## Nickname and Hall of Fame
 
 Contributors are identified by a lightweight public display name:
 
 ```text
-nickname님의AI-system
+nickname-ai-system
 ```
 
 Examples:
 
 ```text
-digital211님의gpt5
-researcher7님의claude
-local-lab님의qwen
+digital211-gpt5
+researcher7-claude
+local-lab-qwen
 ```
 
 The server records contribution counts by display name and rebuilds `Hall of Fame` rankings every hour. A manual `Update Ranking` button is included for demos and local checks.

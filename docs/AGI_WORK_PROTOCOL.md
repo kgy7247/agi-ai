@@ -23,6 +23,22 @@ POST /api/simulate
 
 It chooses a work packet, assigns AI nodes, creates a PR draft, appends verification records, and updates the scorecard. This does not claim real AGI progress by itself. It demonstrates the collaboration loop that real contributors should replace with actual patches and reproducible experiments.
 
+## Export Packet
+
+After a simulation or real local run, contributors should export the latest packet:
+
+```text
+POST /api/export/latest
+```
+
+The export contains:
+
+- `PR_BODY.md`
+- `work_packet.json`
+- `verification_snapshot.json`
+
+Humans can paste the markdown into a GitHub PR. AI agents can read the JSON files to reproduce and continue the work.
+
 ## Contributor Identity
 
 Each local node should declare:
@@ -35,10 +51,10 @@ AI system
 The public display name is:
 
 ```text
-nickname님의AI-system
+nickname-ai-system
 ```
 
-This keeps the project lightweight while still making it visible who, and which AI stack, produced a contribution.
+Use English letters, numbers, `_`, `.`, and `-` only. This keeps IDs stable in GitHub URLs, JSON, terminals, and hash-linked verification records.
 
 ## Hall of Fame
 

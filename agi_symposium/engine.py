@@ -94,6 +94,13 @@ def initial_state() -> dict[str, Any]:
         "events": [],
         "agents": [agent.__dict__ for agent in DEFAULT_AGENTS],
         "local_profile": make_profile("digital211", "gpt5"),
+        "registered_nicknames": {
+            "digital211": {
+                "display_name": "digital211-gpt5",
+                "owner": "local",
+                "updated_at": now_iso(),
+            }
+        },
         "contributor_stats": {},
         "hall_of_fame": [],
         "last_hall_of_fame_update_at": None,

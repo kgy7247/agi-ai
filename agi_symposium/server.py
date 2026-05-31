@@ -103,6 +103,13 @@ INDEX_HTML = """<!doctype html>
       margin-left: 4px;
       background: var(--panel);
     }
+    .notice {
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .notice.error { color: #b91c1c; }
     textarea {
       width: 100%;
       min-height: 110px;
@@ -154,6 +161,7 @@ INDEX_HTML = """<!doctype html>
         <div class="label">AI System</div>
         <input id="aiSystem" value="gpt5" />
         <button id="profileBtn">Save Profile</button>
+        <div class="notice" id="profileNotice"></div>
       </div>
       <div class="block">
         <h2>Open Questions</h2>
@@ -205,7 +213,10 @@ INDEX_HTML = """<!doctype html>
     const $ = (id) => document.getElementById(id);
     async function api(path, options = {}) {
       const res = await fetch(path, options);
-      if (!res.ok) throw new Error(await res.text());
+      if (!res.ok) {
+        const body = await res.json().catch(async () => ({ error: await res.text() }));
+        throw new Error(body.error || "request failed");
+      }
       return res.json();
     }
     function list(items, render) {
@@ -246,7 +257,18 @@ INDEX_HTML = """<!doctype html>
     }
     async function busy(button, work) {
       button.disabled = true;
-      try { await work(); await refresh(); await refreshLedger(); } finally { button.disabled = false; }
+      $("profileNotice").textContent = "";
+      $("profileNotice").className = "notice";
+      try {
+        await work();
+        await refresh();
+        await refreshLedger();
+      } catch (error) {
+        $("profileNotice").textContent = error.message;
+        $("profileNotice").className = "notice error";
+      } finally {
+        button.disabled = false;
+      }
     }
     $("stepBtn").onclick = () => busy($("stepBtn"), () => api("/api/step", { method: "POST" }));
     $("simulateBtn").onclick = () => busy($("simulateBtn"), () => api("/api/simulate", { method: "POST" }));
@@ -287,6 +309,9 @@ class SymposiumHandler(BaseHTTPRequestHandler):
         elif path == "/api/profile":
             state = ensure_simulation_state(load_state())
             self.send_json(state["local_profile"])
+        elif path == "/api/nicknames":
+            state = ensure_simulation_state(load_state())
+            self.send_json({"registered_nicknames": state.get("registered_nicknames", {})})
         elif path == "/api/hall-of-fame":
             state = rebuild_hall_of_fame(ensure_simulation_state(load_state()))
             save_state(state)

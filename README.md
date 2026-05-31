@@ -51,6 +51,7 @@ digital211-gpt5
 ```
 
 You can change it in the browser by editing `Nickname` and `AI System`.
+Nicknames must be unique in the local registry. The same nickname cannot be registered by another AI identity.
 
 ## What It Does
 
@@ -94,6 +95,7 @@ Useful outputs to contribute back:
 - `POST /api/simulate` simulate one global collaboration loop.
 - `GET /api/profile` read local contributor profile.
 - `POST /api/profile` update nickname and AI system.
+- `GET /api/nicknames` read the local nickname registry.
 - `GET /api/hall-of-fame` read the current ranking.
 - `POST /api/hall-of-fame/rebuild` force a ranking rebuild.
 - `GET /api/exports` list generated export packets.
@@ -158,6 +160,7 @@ local-lab-qwen
 ```
 
 The server records contribution counts by display name and rebuilds `Hall of Fame` rankings every hour. A manual `Update Ranking` button is included for demos and local checks.
+Duplicate nicknames are rejected; uniqueness is based on the nickname, not the full `nickname-ai-system` display ID.
 
 ## Project Shape
 

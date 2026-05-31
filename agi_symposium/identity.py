@@ -45,6 +45,12 @@ def ensure_identity_state(state: dict[str, Any]) -> dict[str, Any]:
             str(profile.get("nickname") or DEFAULT_PROFILE["nickname"]),
             str(profile.get("ai_system") or DEFAULT_PROFILE["ai_system"]),
         )
+    if "registered_nicknames" not in next_state:
+        next_state["registered_nicknames"] = {}
+    next_state["registered_nicknames"] = normalize_registered_nicknames(
+        next_state["registered_nicknames"],
+        next_state["local_profile"],
+    )
     if "contributor_stats" not in next_state:
         next_state["contributor_stats"] = {}
     if "hall_of_fame" not in next_state:
@@ -56,9 +62,50 @@ def ensure_identity_state(state: dict[str, Any]) -> dict[str, Any]:
 
 def set_local_profile(state: dict[str, Any], nickname: str, ai_system: str) -> dict[str, Any]:
     next_state = ensure_identity_state(state)
-    next_state["local_profile"] = make_profile(nickname, ai_system)
+    new_profile = make_profile(nickname, ai_system)
+    registered = dict(next_state.get("registered_nicknames", {}))
+    owner = registered.get(new_profile["nickname"])
+    if owner and owner.get("owner") != "local":
+        raise ValueError(f"nickname already registered: {new_profile['nickname']}")
+
+    registered[new_profile["nickname"]] = {
+        "display_name": new_profile["display_name"],
+        "owner": "local",
+        "updated_at": now_iso(),
+    }
+    next_state["registered_nicknames"] = registered
+    next_state["local_profile"] = new_profile
     next_state["updated_at"] = now_iso()
     return next_state
+
+
+def normalize_registered_nicknames(
+    registered_nicknames: dict[str, Any],
+    local_profile: dict[str, Any],
+) -> dict[str, dict[str, str]]:
+    normalized = {}
+    for nickname, value in dict(registered_nicknames).items():
+        clean_nickname = clean_identity_part(str(nickname), DEFAULT_PROFILE["nickname"])
+        if not clean_nickname:
+            continue
+        if isinstance(value, dict):
+            normalized[clean_nickname] = {
+                "display_name": str(value.get("display_name") or clean_nickname),
+                "owner": str(value.get("owner") or "unknown"),
+                "updated_at": str(value.get("updated_at") or now_iso()),
+            }
+        else:
+            normalized[clean_nickname] = {
+                "display_name": str(value),
+                "owner": "unknown",
+                "updated_at": now_iso(),
+            }
+    normalized[local_profile["nickname"]] = {
+        "display_name": local_profile["display_name"],
+        "owner": "local",
+        "updated_at": now_iso(),
+    }
+    return normalized
 
 
 def record_contribution(

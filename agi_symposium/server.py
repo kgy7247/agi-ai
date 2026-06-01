@@ -116,9 +116,10 @@ INDEX_HTML = """<!doctype html>
       background: #fff;
       padding: 11px 12px;
     }
-    .bubble.seed_qa { border-left: 4px solid #0f766e; }
-    .bubble.verification { border-left: 4px solid #1d4ed8; }
-    .bubble.external_contribution { border-left: 4px solid #7c3aed; }
+    .bubble.seed_state { border-left: 4px solid #0f766e; }
+    .bubble.seed_question { border-left: 4px solid #a16207; }
+    .bubble.seed_answer { border-left: 4px solid #0f766e; }
+    .bubble.seed_evidence { border-left: 4px solid #1d4ed8; }
     .bubble .content {
       white-space: pre-wrap;
       line-height: 1.42;
@@ -268,8 +269,8 @@ INDEX_HTML = """<!doctype html>
     <section>
       <div class="monitor-head">
         <div>
-          <h2>Live Learning Monitor</h2>
-          <div class="sub" id="monitorSummary">waiting for learning events</div>
+          <h2>AGI Seed Thought Monitor</h2>
+          <div class="sub" id="monitorSummary">watching the seed think</div>
         </div>
         <button id="monitorRefreshBtn">Refresh</button>
       </div>
@@ -339,7 +340,7 @@ INDEX_HTML = """<!doctype html>
     }
     async function refreshMonitor() {
       const payload = await api("/api/monitor");
-      $("monitorSummary").textContent = `${payload.messages.length} live messages · ${payload.ledger_errors.length} ledger errors`;
+      $("monitorSummary").textContent = `${payload.messages.length} seed thoughts · ${payload.ledger_errors.length} ledger errors`;
       const monitor = $("monitor");
       monitor.innerHTML = payload.messages.map(message => `
         <article class="bubble ${escapeHtml(message.kind || "")}">

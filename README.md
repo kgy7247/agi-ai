@@ -290,14 +290,15 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8787/api/seed/answer -Body 
 
 The self-running local autopilot answers the current seed question every cycle and links the answer to its verification/result packet evidence.
 
-## Live Learning Monitor
+## AGI Seed Thought Monitor
 
-The browser UI includes a chat-like `Live Learning Monitor`. It refreshes every 5 seconds and shows:
+The browser UI includes a chat-like `AGI Seed Thought Monitor`. It refreshes every 5 seconds and focuses on the seed's learning state instead of showing every participant message:
 
-- Human and AI contributions.
-- AGI Seed Q&A.
-- Verification ledger records.
-- Result/evidence labels such as `pass`, `needs-review`, and packet hashes.
+- Current seed question.
+- Answers the seed has absorbed.
+- Evidence linked to those answers.
+- Maturity counters such as answered questions and evidence-backed answers.
+- Result labels such as `pass` and `needs-review`.
 
 Machine users can read the same stream with:
 

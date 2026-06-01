@@ -21,6 +21,8 @@ class FakeAutoRunApi:
             return {"active_daily_topic": {"id": "DAY-001"}, "work_packets": []}
         if path == "/api/state":
             return self.state
+        if path == "/api/seed":
+            return {"next_questions": ["DAY-001 seed question"]}
         raise AssertionError(path)
 
     def post_json(self, path, payload):
@@ -39,6 +41,8 @@ class FakeAutoRunApi:
             return {"accepted": True, "record": {"verifier": payload["verifier"], "hash": "abc123"}}
         if path == "/api/result-packets/export":
             return {"accepted": True, "packet": {"id": "RPK-abc123"}}
+        if path == "/api/seed/answer":
+            return {"accepted": True, "record": {"id": "SEED-A-0001"}}
         if path == "/api/hall-of-fame/rebuild":
             return {
                 "hall_of_fame": [
@@ -66,6 +70,8 @@ class AutoRunTests(unittest.TestCase):
         self.assertEqual(record["contributor"], "digital211-hermes3")
         self.assertEqual(record["active_daily_topic_id"], "DAY-001")
         self.assertEqual(record["result_packet_id"], "RPK-abc123")
+        self.assertEqual(record["seed_answer_id"], "SEED-A-0001")
+        self.assertIn("/api/seed/answer", [path for path, _ in api.posts])
         self.assertIn("/api/result-packets/export", [path for path, _ in api.posts])
         self.assertIn("/api/hall-of-fame/rebuild", [path for path, _ in api.posts])
 

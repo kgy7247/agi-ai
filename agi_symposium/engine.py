@@ -8,6 +8,7 @@ from .agi_milestones import assess_milestones, demo_evidence
 from .daily_topics import ensure_daily_topic_state
 from .goals import COMMON_GOAL, COMMON_GOAL_KO
 from .identity import make_profile
+from .seed import ensure_seed_state
 from .simulation import AI_NODES, DEFAULT_WORK_PACKETS
 
 
@@ -131,7 +132,7 @@ def initial_state() -> dict[str, Any]:
         },
         "updated_at": now_iso(),
     }
-    return ensure_daily_topic_state(state)
+    return ensure_seed_state(ensure_daily_topic_state(state))
 
 
 def now_iso() -> str:

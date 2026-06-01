@@ -16,6 +16,7 @@ from .identity import display_name, rebuild_hall_of_fame, record_contribution, s
 from .manifest import room_manifest
 from .nodes import register_ai_node
 from .result_packets import import_result_packet, make_result_packet, read_result_packet, write_result_packet
+from .seed import answer_seed_question, ask_seed_question, ensure_seed_state
 from .simulation import ensure_simulation_state, run_global_collaboration_simulation
 from .storage import EXPORT_DIR, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
 from .verification import append_verification, make_verification_record, read_ledger, verify_ledger
@@ -169,6 +170,14 @@ INDEX_HTML = """<!doctype html>
         <div class="sub" id="dailyTopicCondition"></div>
       </div>
       <div class="block">
+        <h2>AGI Seed</h2>
+        <div class="value" id="seedName">loading</div>
+        <div class="sub" id="seedPurpose"></div>
+        <div class="sub" id="seedMaturity"></div>
+        <button id="seedQuestionBtn">Ask Seed</button>
+        <div class="sub" id="seedQuestion"></div>
+      </div>
+      <div class="block">
         <h2>Local Contributor</h2>
         <div class="label">Display</div>
         <div class="value" id="profileDisplay">digital211-gpt5</div>
@@ -251,6 +260,12 @@ INDEX_HTML = """<!doctype html>
       $("dailyTopicTitle").textContent = dailyTopic.id ? `${dailyTopic.id} ${dailyTopic.title_ko}` : "no daily topic";
       $("dailyTopicQuestion").textContent = dailyTopic.question_ko || "";
       $("dailyTopicCondition").textContent = dailyTopic.absolute_condition_ko || state.absolute_benefit_condition_ko || "";
+      const seed = state.agi_seed || {};
+      const maturity = seed.maturity || {};
+      $("seedName").textContent = seed.name || "Open AGI Seed";
+      $("seedPurpose").textContent = seed.purpose_ko || seed.purpose || "";
+      $("seedMaturity").textContent = `answers ${maturity.questions_answered || 0}, evidence ${maturity.evidence_backed_answers || 0}, topics ${maturity.topic_coverage || 0}`;
+      $("seedQuestion").textContent = (seed.next_questions || [])[0] || "";
       const profile = state.local_profile || {};
       $("profileDisplay").textContent = profile.display_name || `${profile.nickname || "digital211"}-${profile.ai_system || "gpt5"}`;
       $("nickname").value = profile.nickname || "digital211";
@@ -312,6 +327,7 @@ INDEX_HTML = """<!doctype html>
       body: JSON.stringify({ nickname: $("nickname").value, ai_system: $("aiSystem").value })
     }));
     $("hofBtn").onclick = () => busy($("hofBtn"), () => api("/api/hall-of-fame/rebuild", { method: "POST" }));
+    $("seedQuestionBtn").onclick = () => busy($("seedQuestionBtn"), () => api("/api/seed/question", { method: "POST" }));
     $("manifestBtn").onclick = () => window.open("/room_manifest", "_blank");
     $("contributeBtn").onclick = () => busy($("contributeBtn"), () => api("/api/contribute", {
       method: "POST",
@@ -365,6 +381,10 @@ class SymposiumHandler(BaseHTTPRequestHandler):
         elif path == "/api/nodes":
             state = ensure_simulation_state(load_state())
             self.send_json({"ai_nodes": state.get("ai_nodes", [])})
+        elif path == "/api/seed":
+            state = ensure_seed_state(ensure_simulation_state(load_state()))
+            save_state(state)
+            self.send_json(state["agi_seed"])
         elif path == "/room_manifest":
             self.send_json(room_manifest(load_state()))
         elif path == "/api/verification":
@@ -433,6 +453,29 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                 state = rebuild_hall_of_fame(state)
                 save_state(state)
                 self.send_json({"accepted": True, "node": state["ai_nodes"][-1], "state": state})
+            elif path == "/api/seed/question":
+                body = self.read_json()
+                state = load_state()
+                state, question = ask_seed_question(
+                    state,
+                    asked_by=str(body.get("asked_by") or display_name(state.get("local_profile", {})) or "agi-seed"),
+                )
+                save_state(state)
+                self.send_json({"accepted": True, "question": question, "state": state})
+            elif path == "/api/seed/answer":
+                body = self.read_json()
+                state, record = answer_seed_question(
+                    load_state(),
+                    contributor=str(body.get("contributor") or body.get("agent_id") or ""),
+                    question=str(body.get("question") or ""),
+                    answer=str(body.get("answer") or ""),
+                    evidence=str(body.get("evidence") or ""),
+                    result=str(body.get("result") or "needs-review"),
+                )
+                state = record_contribution(state, str(record.get("contributor") or ""), "seed_answer")
+                state = rebuild_hall_of_fame(state)
+                save_state(state)
+                self.send_json({"accepted": True, "record": record, "state": state})
             elif path == "/api/export/latest":
                 state = ensure_simulation_state(load_state())
                 export_record, file_paths = export_latest_contribution(

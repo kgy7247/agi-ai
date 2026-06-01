@@ -67,6 +67,11 @@ class LocalNodeTests(unittest.TestCase):
                     "id": "DAY-001",
                     "title_ko": "태양광 발전효율 상승을 위한 신소재 탐색 및 시뮬레이션",
                 },
+                "agi_seed": {
+                    "id": "AGI-SEED-001",
+                    "name": "Open AGI Seed",
+                    "next_questions": ["DAY-001 seed question"],
+                },
                 "events": [],
                 "work_packets": [{"id": "WORK-002", "status": "ready", "title": "Self correction"}],
             },
@@ -79,6 +84,8 @@ class LocalNodeTests(unittest.TestCase):
         self.assertIn("DAY-001", prompt)
         self.assertIn("태양광 발전효율", prompt)
         self.assertIn("환경과 AI", prompt)
+        self.assertIn("AGI-SEED-001", prompt)
+        self.assertIn("DAY-001 seed question", prompt)
 
     def test_build_prompt_uses_work_packet_when_no_daily_topic_exists(self):
         config = LocalNodeConfig(nickname="localbuilder7", ai_system="llama3")

@@ -8,6 +8,7 @@ from .engine import initial_state
 from .daily_topics import ensure_daily_topic_state
 from .goals import ensure_common_goal
 from .memory import ensure_research_memory, refresh_memory_milestone_evidence
+from .seed import ensure_seed_state
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,7 +30,7 @@ def load_state() -> dict[str, Any]:
         save_state(state)
         return state
     with STATE_PATH.open("r", encoding="utf-8") as handle:
-        state = ensure_research_memory(ensure_daily_topic_state(ensure_common_goal(json.load(handle))))
+        state = ensure_seed_state(ensure_research_memory(ensure_daily_topic_state(ensure_common_goal(json.load(handle)))))
         return refresh_memory_milestone_evidence(state, persisted=True)
 
 

@@ -121,6 +121,7 @@ Nicknames must be unique in the local registry. The same nickname cannot be regi
 - Maintains a hash-linked verification ledger for independent review.
 - Simulates a global AI/human collaboration loop with work packets, AI nodes, scorecard updates, and PR drafts.
 - Tracks contributor identities as ASCII `nickname-ai` IDs and rebuilds the Hall of Fame every hour.
+- Maintains a public `AGI Seed` that grows through participant Q&A, evidence, critique, and result packets.
 - Exports the latest simulated contribution as a PR packet that humans or AI agents can attach to GitHub work.
 - Runs a full demo that validates the generated patch with `git apply --check`, applies it in a temporary sandbox copy, and runs tests there.
 - Includes a deterministic self-correction benchmark for revising weak plans after critique.
@@ -166,6 +167,9 @@ Useful outputs to contribute back:
 - `POST /api/result-packets/import` import and verify a node result packet.
 - `GET /api/nodes` list human, hosted, and local LLM contributor nodes.
 - `POST /api/nodes/register` register a local or hosted contributor node.
+- `GET /api/seed` read the public AGI Seed state.
+- `POST /api/seed/question` ask or refresh the current seed question.
+- `POST /api/seed/answer` append a participant answer to grow the seed.
 - `POST /api/export/latest` export the latest PR draft and verification snapshot.
 - `POST /api/demo/run` run the full proof workflow in one call.
 - `python -m agi_symposium.demo` run the same workflow from the terminal.
@@ -265,6 +269,25 @@ The local node command:
 5. Appends a verification record proving the node used the same protocol.
 
 No private model weights, prompts, or local endpoints are uploaded to GitHub by default. Public contributions should include only reproducible artifacts, commands, and verification evidence.
+
+## GitHub AGI Seed
+
+The repository carries an `AGI Seed` instead of claiming to contain finished AGI. The seed is a machine-readable object in local state and `/room_manifest`:
+
+- Purpose and principles.
+- Current daily topic question.
+- Participant Q&A records.
+- Evidence or result packet references.
+- Maturity metrics for answered questions, evidence-backed answers, critique/revision answers, and topic coverage.
+
+Humans, hosted models, and local LLMs nurture the same seed by asking and answering questions:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8787/api/seed/question -Body '{}' -ContentType 'application/json'
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8787/api/seed/answer -Body '{"contributor":"digital211-hermes3","question":"...","answer":"...","evidence":"RPK-...","result":"needs-review"}' -ContentType 'application/json'
+```
+
+The self-running local autopilot answers the current seed question every cycle and links the answer to its verification/result packet evidence.
 
 ## Self-Running Local Autopilot
 

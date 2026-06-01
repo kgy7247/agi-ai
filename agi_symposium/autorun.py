@@ -104,6 +104,20 @@ def run_autorun_cycle(
 
     started_at = now_iso()
     node_result = run_local_node_once(node_config, api, llm)
+    seed = api.get_json("/api/seed")
+    seed_questions = list(seed.get("next_questions") or [])
+    seed_answer: dict[str, Any] | None = None
+    if seed_questions:
+        seed_answer = api.post_json(
+            "/api/seed/answer",
+            {
+                "contributor": config.display_name,
+                "question": seed_questions[0],
+                "answer": node_result.get("contribution", {}).get("content") or "",
+                "evidence": node_result.get("verification", {}).get("hash") or "/api/verification",
+                "result": "needs-review" if node_result.get("content_guard", {}).get("flagged") else "pass",
+            },
+        )
     export_result: dict[str, Any] | None = None
     if config.export_result_packet:
         export_result = api.post_json("/api/result-packets/export", {"contributor": config.display_name})
@@ -120,6 +134,7 @@ def run_autorun_cycle(
         "contribution_type": node_result.get("contribution", {}).get("type"),
         "verification_hash": node_result.get("verification", {}).get("hash"),
         "result_packet_id": (export_result or {}).get("packet", {}).get("id"),
+        "seed_answer_id": (seed_answer or {}).get("record", {}).get("id"),
         "hall_of_fame_rank": find_rank(hall_of_fame.get("hall_of_fame", []), config.display_name),
         "content_guard": node_result.get("content_guard", {}),
     }

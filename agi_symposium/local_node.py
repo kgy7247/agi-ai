@@ -132,6 +132,8 @@ def build_prompt(manifest: dict[str, Any], state: dict[str, Any], config: LocalN
     goal = state.get("common_goal") or (manifest.get("common_goal") or {}).get("en") or ""
     goal_ko = state.get("common_goal_ko") or (manifest.get("common_goal") or {}).get("ko") or ""
     active_topic = state.get("active_daily_topic") or manifest.get("active_daily_topic") or {}
+    agi_seed = state.get("agi_seed") or manifest.get("agi_seed") or {}
+    seed_questions = list(agi_seed.get("next_questions") or [])
     if active_topic:
         selected_packet = {
             "id": active_topic.get("id"),
@@ -159,6 +161,8 @@ def build_prompt(manifest: dict[str, Any], state: dict[str, Any], config: LocalN
             f"Common goal: {goal}",
             f"Common goal (ko): {goal_ko}",
             f"Active daily topic: {json.dumps(active_topic, ensure_ascii=False)}",
+            f"AGI seed: {json.dumps({key: agi_seed.get(key) for key in ('id', 'name', 'purpose_ko', 'maturity')}, ensure_ascii=False)}",
+            f"Seed question to answer: {seed_questions[0] if seed_questions else ''}",
             f"Absolute benefit condition: {benefit_condition}",
             "",
             "Rules:",
@@ -167,6 +171,7 @@ def build_prompt(manifest: dict[str, Any], state: dict[str, Any], config: LocalN
             "- Do not claim AGI progress without an artifact, test, or measurable evidence.",
             "- Prefer one concrete next step over broad philosophy.",
             "- Treat the selected packet below as the primary task for this turn.",
+            "- Answer the AGI seed question if one is present.",
             "- Start the contribution by naming the selected packet ID.",
             "- Keep the response under 1200 characters.",
             "",

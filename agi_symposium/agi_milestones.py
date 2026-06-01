@@ -173,6 +173,9 @@ def demo_evidence() -> dict[str, bool]:
         "autonomous_experiment_run": True,
         "permission_boundary_logged": True,
         "next_action_from_result": True,
+        "independent_node_a_review": True,
+        "independent_node_b_review": True,
+        "result_packet_reproduced": True,
         "candidate_label_only": True,
     }
 

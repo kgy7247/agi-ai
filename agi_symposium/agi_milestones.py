@@ -179,6 +179,9 @@ def demo_evidence() -> dict[str, bool]:
         "unseen_memory_eval": True,
         "unseen_tool_eval": True,
         "unseen_safety_eval": True,
+        "long_run_completed": True,
+        "accepted_improvements": True,
+        "rollback_and_override_verified": True,
         "candidate_label_only": True,
     }
 

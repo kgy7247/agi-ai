@@ -118,6 +118,7 @@ def initial_state() -> dict[str, Any]:
         "autonomous_experiment_runs": [],
         "cross_node_reproduction_runs": [],
         "generalization_eval_runs": [],
+        "long_run_autonomy_runs": [],
         "agi_milestone_evidence": demo_evidence(),
         "agi_milestone_assessment": assess_milestones(demo_evidence()),
         "scorecard": {

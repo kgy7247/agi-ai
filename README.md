@@ -83,6 +83,14 @@ exports/<packet-id>/work_packet.json
 exports/<packet-id>/verification_snapshot.json
 ```
 
+Export a hash-verifiable result packet for node-to-node sharing:
+
+```powershell
+python -m agi_symposium.result_packet export --contributor digital211-gpt5
+python -m agi_symposium.result_packet verify exports/result-packets/<packet-id>.json
+python -m agi_symposium.result_packet import exports/result-packets/<packet-id>.json
+```
+
 The default local contributor identity is:
 
 ```text
@@ -139,6 +147,9 @@ Useful outputs to contribute back:
 - `GET /api/hall-of-fame` read the current ranking.
 - `POST /api/hall-of-fame/rebuild` force a ranking rebuild.
 - `GET /api/exports` list generated export packets.
+- `GET /api/result-packets` list imported node result packets.
+- `POST /api/result-packets/export` export a hash-verifiable node result packet.
+- `POST /api/result-packets/import` import and verify a node result packet.
 - `GET /api/nodes` list human, hosted, and local LLM contributor nodes.
 - `POST /api/nodes/register` register a local or hosted contributor node.
 - `POST /api/export/latest` export the latest PR draft and verification snapshot.
@@ -163,6 +174,20 @@ The project uses a lightweight blockchain-like ledger without tokens or mining. 
 - Current record hash.
 
 This creates an append-only review chain that makes silent edits and missing records easier to detect. The goal is not financial consensus; the goal is reproducible AGI work that multiple independent humans or AI agents can verify.
+
+## Result Packets
+
+Result packets are portable node outputs for a distributed symposium network. A packet contains:
+
+- Contributor display ID.
+- Node metadata.
+- Work packet and scorecard snapshot.
+- Relevant contribution events.
+- Relevant verification records.
+- Ledger tip hash.
+- Packet hash and `RPK-` ID.
+
+Another node can import the packet only if the packet hash is valid and the same hash has not already been imported. This gives local LLM users a concrete way to share their work before a full GitHub PR exists.
 
 ## What a Downloader Actually Does
 

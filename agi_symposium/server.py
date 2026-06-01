@@ -5,6 +5,7 @@ import json
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from typing import Any
 from urllib.parse import urlparse
 
@@ -14,6 +15,7 @@ from .engine import accept_contribution, run_round
 from .identity import display_name, rebuild_hall_of_fame, record_contribution, set_local_profile
 from .manifest import room_manifest
 from .nodes import register_ai_node
+from .result_packets import import_result_packet, make_result_packet, read_result_packet, write_result_packet
 from .simulation import ensure_simulation_state, run_global_collaboration_simulation
 from .storage import EXPORT_DIR, VERIFICATION_LEDGER_PATH, append_events, load_state, reset_state, save_state
 from .verification import append_verification, make_verification_record, read_ledger, verify_ledger
@@ -337,6 +339,9 @@ class SymposiumHandler(BaseHTTPRequestHandler):
         elif path == "/api/exports":
             state = ensure_simulation_state(load_state())
             self.send_json({"exports": state.get("exports", [])})
+        elif path == "/api/result-packets":
+            state = ensure_simulation_state(load_state())
+            self.send_json({"result_packets": state.get("result_packets", [])})
         elif path == "/api/nodes":
             state = ensure_simulation_state(load_state())
             self.send_json({"ai_nodes": state.get("ai_nodes", [])})
@@ -420,6 +425,27 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                 state = rebuild_hall_of_fame(state)
                 save_state(state)
                 self.send_json({"accepted": True, "export": export_record, "file_paths": file_paths, "state": state})
+            elif path == "/api/result-packets/export":
+                body = self.read_json()
+                state = ensure_simulation_state(load_state())
+                packet = make_result_packet(
+                    state,
+                    read_ledger(VERIFICATION_LEDGER_PATH),
+                    contributor=str(body.get("contributor") or display_name(state["local_profile"])),
+                )
+                path = write_result_packet(packet, EXPORT_DIR)
+                self.send_json({"accepted": True, "packet": packet, "path": str(path)})
+            elif path == "/api/result-packets/import":
+                body = self.read_json()
+                if body.get("path"):
+                    packet = read_result_packet(Path(str(body["path"])))
+                else:
+                    packet = dict(body.get("packet") or {})
+                state, event = import_result_packet(load_state(), packet)
+                state = rebuild_hall_of_fame(state)
+                save_state(state)
+                append_events([event])
+                self.send_json({"accepted": True, "event": event, "state": state})
             elif path == "/api/demo/run":
                 body = self.read_json()
                 self.send_json(

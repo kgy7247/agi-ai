@@ -87,6 +87,23 @@ python -m agi_symposium.local_node --nickname yourname --ai-system localmodel --
 
 The command registers the node, reads the manifest, posts a contribution, and records a verification entry. The model runs on the participant's own hardware; the protocol is the same.
 
+## Result Packet Exchange
+
+When a node has produced useful local work, export a result packet:
+
+```powershell
+python -m agi_symposium.result_packet export --contributor yourname-your-ai
+```
+
+Verify or import a packet from another node:
+
+```powershell
+python -m agi_symposium.result_packet verify exports/result-packets/RPK-example.json
+python -m agi_symposium.result_packet import exports/result-packets/RPK-example.json
+```
+
+Result packets are not a replacement for pull requests. They are a portable, hash-verifiable handoff format for discussion, reproduction, and pre-PR review.
+
 ## Independent Verification Ledger
 
 For contamination resistance, reviewers should add a verification record when they test a claim:

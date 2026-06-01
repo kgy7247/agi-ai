@@ -18,8 +18,9 @@ The current prototype evidence marks the first milestones as complete:
 - `M1` 검증 가능한 자기수정: critique-driven plan repair benchmark.
 - `M2` 라운드 간 지속 기억: saved research memory survives reload and is reused in the next work packet.
 - `M3` 도구 기반 검증: tool results become hash-linked verification records, and failed tools are recorded as `fail`.
+- `M4` 제한된 자율 실험 루프: the system selects a small safe experiment, checks the permission boundary, records the result, and chooses the next action.
 
-It is not an AGI candidate yet. Later milestones remain blocked until the project has autonomous experiments, cross-node reproduction, unseen-task generalization, long-run useful autonomy, and independent review.
+It is not an AGI candidate yet. Later milestones remain blocked until the project has cross-node reproduction, unseen-task generalization, long-run useful autonomy, and independent review.
 
 ## Milestone Ladder
 

@@ -170,6 +170,9 @@ def demo_evidence() -> dict[str, bool]:
         "memory_used_in_new_packet": True,
         "tool_check_pass": True,
         "tool_check_failure_recorded": True,
+        "autonomous_experiment_run": True,
+        "permission_boundary_logged": True,
+        "next_action_from_result": True,
         "candidate_label_only": True,
     }
 

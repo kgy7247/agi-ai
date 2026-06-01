@@ -89,6 +89,8 @@ def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
         "exports": state.get("exports", []),
         "result_packets": state.get("result_packets", []),
         "demo_runs": state.get("demo_runs", []),
+        "permission_boundaries": state.get("permission_boundaries", []),
+        "autonomous_experiment_runs": state.get("autonomous_experiment_runs", []),
         "agi_milestones": milestone_catalog(),
         "agi_milestone_assessment": state.get("agi_milestone_assessment") or assess_milestones(demo_evidence()),
         "scorecard": state.get("scorecard", {}),

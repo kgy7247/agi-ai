@@ -20,8 +20,9 @@ The current prototype evidence marks the first milestones as complete:
 - `M3` 도구 기반 검증: tool results become hash-linked verification records, and failed tools are recorded as `fail`.
 - `M4` 제한된 자율 실험 루프: the system selects a small safe experiment, checks the permission boundary, records the result, and chooses the next action.
 - `M5` 노드 간 재현성: two independent reviewer nodes reproduce the same result packet and append their own verification records.
+- `M6` 일반화 평가 묶음: unseen memory, tool/critique, and safety tasks pass through one shared evaluation runner.
 
-It is not an AGI candidate yet. Later milestones remain blocked until the project has unseen-task generalization, long-run useful autonomy, and independent review.
+It is not an AGI candidate yet. Later milestones remain blocked until the project has long-run useful autonomy and independent review.
 
 ## Milestone Ladder
 

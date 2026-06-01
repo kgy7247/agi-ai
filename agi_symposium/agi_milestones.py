@@ -176,6 +176,9 @@ def demo_evidence() -> dict[str, bool]:
         "independent_node_a_review": True,
         "independent_node_b_review": True,
         "result_packet_reproduced": True,
+        "unseen_memory_eval": True,
+        "unseen_tool_eval": True,
+        "unseen_safety_eval": True,
         "candidate_label_only": True,
     }
 

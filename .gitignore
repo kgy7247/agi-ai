@@ -9,6 +9,7 @@ env/
 
 state/
 exports/
+.codex-remote-attachments/
 *.log
 
 .env

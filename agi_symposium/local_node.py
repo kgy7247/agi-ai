@@ -177,11 +177,12 @@ def run_local_node_once(
     content = llm.complete(prompt)
     if not content:
         raise ValueError("local LLM returned an empty contribution")
+    guarded = guard_unverified_claims(content)
     contribution = symposium.post_json(
         "/api/contribute",
         {
             "agent_id": config.display_name,
-            "content": content,
+            "content": guarded["content"],
         },
     )
     verification = symposium.post_json(
@@ -200,6 +201,39 @@ def run_local_node_once(
         "node": node.get("node", node),
         "contribution": contribution.get("event", contribution),
         "verification": verification.get("record", verification),
+        "content_guard": {
+            "flagged": guarded["flagged"],
+            "reason": guarded["reason"],
+        },
+    }
+
+
+def guard_unverified_claims(content: str) -> dict[str, Any]:
+    lowered = content.lower()
+    risky_phrases = [
+        "implemented",
+        "tested",
+        "tests pass",
+        "passes",
+        "완료",
+        "구현",
+        "테스트",
+        "통과",
+    ]
+    flagged = any(phrase in lowered for phrase in risky_phrases)
+    if not flagged:
+        return {"content": content, "flagged": False, "reason": ""}
+
+    prefix = (
+        "[needs-review: local LLM output may claim implementation or test success without an attached artifact. "
+        "Treat as a proposal until code, patch, or reproducible evidence is submitted.]\n"
+    )
+    if content.startswith("[needs-review:"):
+        return {"content": content, "flagged": True, "reason": "already marked needs-review"}
+    return {
+        "content": prefix + content,
+        "flagged": True,
+        "reason": "implementation_or_test_claim_without_attached_artifact",
     }
 
 

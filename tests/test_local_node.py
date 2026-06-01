@@ -1,6 +1,12 @@
 import unittest
 
-from agi_symposium.local_node import DryRunClient, LocalNodeConfig, build_prompt, run_local_node_once
+from agi_symposium.local_node import (
+    DryRunClient,
+    LocalNodeConfig,
+    build_prompt,
+    guard_unverified_claims,
+    run_local_node_once,
+)
 
 
 class FakeSymposiumApi:
@@ -69,6 +75,18 @@ class LocalNodeTests(unittest.TestCase):
             [path for path, _ in api.posts],
             ["/api/profile", "/api/nodes/register", "/api/contribute", "/api/verification"],
         )
+
+    def test_guard_unverified_claims_marks_implementation_claims(self):
+        result = guard_unverified_claims("Implemented and tested WORK-002 successfully.")
+
+        self.assertTrue(result["flagged"])
+        self.assertIn("needs-review", result["content"])
+
+    def test_guard_unverified_claims_leaves_plain_proposals_unchanged(self):
+        result = guard_unverified_claims("Proposal: add a self-correction benchmark with a failing case.")
+
+        self.assertFalse(result["flagged"])
+        self.assertEqual(result["content"], "Proposal: add a self-correction benchmark with a failing case.")
 
 
 if __name__ == "__main__":

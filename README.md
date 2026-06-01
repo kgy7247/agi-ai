@@ -48,6 +48,14 @@ Or run the same workflow without the browser:
 python -m agi_symposium.demo --reset --nickname digital211 --ai-system gpt5
 ```
 
+Check public release readiness:
+
+```powershell
+python -m agi_symposium.release_check --runtime
+```
+
+See [docs/PUBLIC_RELEASE.md](docs/PUBLIC_RELEASE.md) before publishing the repository.
+
 Run one local LLM node turn through the same participation protocol:
 
 ```powershell

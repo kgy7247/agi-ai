@@ -72,12 +72,50 @@ class AutoRunTests(unittest.TestCase):
         self.assertEqual(record["result_packet_id"], "RPK-abc123")
         self.assertEqual(record["seed_answer_id"], "SEED-A-0001")
         self.assertEqual(record["public_monitor_messages"], 1)
+        self.assertEqual(record["public_monitor_publish"]["status"], "disabled")
         self.assertIn("/api/seed/answer", [path for path, _ in api.posts])
         self.assertIn("/api/result-packets/export", [path for path, _ in api.posts])
         self.assertIn("/api/hall-of-fame/rebuild", [path for path, _ in api.posts])
 
     def test_find_rank_returns_none_when_contributor_is_absent(self):
         self.assertIsNone(autorun.find_rank([{"rank": 1, "display_name": "other"}], "digital211-hermes3"))
+
+    def test_publish_public_monitor_snapshot_commits_and_pushes_changed_snapshot(self):
+        calls = []
+
+        def fake_run_git(args):
+            calls.append(args)
+            if args[0] == "status":
+                return autorun.subprocess.CompletedProcess(["git", *args], 0, stdout=" M docs/public-monitor.json\n", stderr="")
+            if args[0] == "add":
+                return autorun.subprocess.CompletedProcess(["git", *args], 0, stdout="", stderr="")
+            if args[0] == "commit":
+                return autorun.subprocess.CompletedProcess(
+                    ["git", *args],
+                    0,
+                    stdout="[main abc1234] Auto-refresh public seed monitor\n 1 file changed\n",
+                    stderr="",
+                )
+            if args[0] == "push":
+                return autorun.subprocess.CompletedProcess(["git", *args], 0, stdout="", stderr="")
+            raise AssertionError(args)
+
+        with patch("agi_symposium.autorun.run_git", side_effect=fake_run_git):
+            result = autorun.publish_public_monitor_snapshot()
+
+        self.assertEqual(result["status"], "published")
+        self.assertEqual(result["path"], "docs/public-monitor.json")
+        self.assertEqual([call[0] for call in calls], ["status", "add", "commit", "push"])
+
+    def test_publish_public_monitor_snapshot_skips_when_unchanged(self):
+        with patch(
+            "agi_symposium.autorun.run_git",
+            return_value=autorun.subprocess.CompletedProcess(["git", "status"], 0, stdout="", stderr=""),
+        ) as run_git:
+            result = autorun.publish_public_monitor_snapshot()
+
+        self.assertEqual(result["status"], "no-change")
+        self.assertEqual(run_git.call_count, 1)
 
 
 if __name__ == "__main__":

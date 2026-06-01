@@ -27,6 +27,8 @@ from .storage import STATE_DIR
 
 
 AUTORUN_LOG_PATH = STATE_DIR / "autorun_runs.jsonl"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+PUBLIC_MONITOR_PATH = REPO_ROOT / "docs" / "public-monitor.json"
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,7 @@ class AutoRunConfig:
     interval_seconds: int = 3600
     max_cycles: int | None = None
     export_result_packet: bool = True
+    publish_public_monitor: bool = False
 
     @property
     def display_name(self) -> str:
@@ -123,6 +126,7 @@ def run_autorun_cycle(
     if config.export_result_packet:
         export_result = api.post_json("/api/result-packets/export", {"contributor": config.display_name})
     public_snapshot = write_public_monitor_snapshot()
+    publish_result = publish_public_monitor_snapshot() if config.publish_public_monitor else {"status": "disabled"}
     hall_of_fame = api.post_json("/api/hall-of-fame/rebuild", {})
     state = api.get_json("/api/state")
     active_topic = state.get("active_daily_topic") or {}
@@ -138,6 +142,7 @@ def run_autorun_cycle(
         "result_packet_id": (export_result or {}).get("packet", {}).get("id"),
         "seed_answer_id": (seed_answer or {}).get("record", {}).get("id"),
         "public_monitor_messages": len(public_snapshot.get("messages", [])),
+        "public_monitor_publish": publish_result,
         "hall_of_fame_rank": find_rank(hall_of_fame.get("hall_of_fame", []), config.display_name),
         "content_guard": node_result.get("content_guard", {}),
     }
@@ -156,6 +161,40 @@ def append_autorun_record(record: dict[str, Any]) -> None:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
     with AUTORUN_LOG_PATH.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
+def run_git(args: list[str]) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def publish_public_monitor_snapshot(path: Path = PUBLIC_MONITOR_PATH) -> dict[str, Any]:
+    relative_path = path.relative_to(REPO_ROOT).as_posix()
+    status = run_git(["status", "--porcelain", "--", relative_path])
+    if status.returncode != 0:
+        return {"status": "failed", "step": "status", "error": status.stderr.strip()}
+    if not status.stdout.strip():
+        return {"status": "no-change", "path": relative_path}
+
+    add = run_git(["add", "--", relative_path])
+    if add.returncode != 0:
+        return {"status": "failed", "step": "add", "error": add.stderr.strip()}
+
+    commit = run_git(["commit", "-m", "Auto-refresh public seed monitor"])
+    if commit.returncode != 0:
+        return {"status": "failed", "step": "commit", "error": (commit.stderr or commit.stdout).strip()}
+
+    push = run_git(["push", "origin", "main"])
+    if push.returncode != 0:
+        return {"status": "failed", "step": "push", "error": push.stderr.strip(), "commit": commit.stdout.strip()}
+
+    commit_line = commit.stdout.splitlines()[0] if commit.stdout.splitlines() else ""
+    return {"status": "published", "path": relative_path, "commit": commit_line}
 
 
 def run_autorun_loop(config: AutoRunConfig, *, start_server: bool = False) -> list[dict[str, Any]]:
@@ -194,6 +233,7 @@ def main() -> None:
     parser.add_argument("--max-cycles", type=int, default=None)
     parser.add_argument("--start-server", action="store_true")
     parser.add_argument("--no-export", action="store_true")
+    parser.add_argument("--publish-public-monitor", action="store_true")
     args = parser.parse_args()
 
     config = AutoRunConfig(
@@ -207,6 +247,7 @@ def main() -> None:
         interval_seconds=args.interval_seconds,
         max_cycles=args.max_cycles,
         export_result_packet=not args.no_export,
+        publish_public_monitor=args.publish_public_monitor,
     )
     records = run_autorun_loop(config, start_server=args.start_server)
     print(json.dumps({"records": records}, ensure_ascii=False, indent=2))

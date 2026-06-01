@@ -86,6 +86,8 @@
       <section class="panel">
         <h2>Snapshot</h2>
         <div class="sub" id="generatedAt">loading</div>
+        <div class="sub" id="lastChecked">checking</div>
+        <div class="sub" id="nextRefresh">auto refresh every 30s</div>
         <div class="sub" id="ledgerStatus"></div>
         <div class="sub"><a href="https://github.com/kgy7247/agi-ai">GitHub repository</a></div>
       </section>
@@ -96,24 +98,45 @@
     </section>
   </main>
   <script>
+    const REFRESH_MS = 30000;
+    let lastLoadedGeneratedAt = "";
+    let nextRefreshTimer = null;
+
     const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, char => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
     }[char]));
 
+    function formatLocalTime(date = new Date()) {
+      return date.toLocaleString("ko-KR", { hour12: false });
+    }
+
+    function startRefreshCountdown() {
+      const nextAt = Date.now() + REFRESH_MS;
+      if (nextRefreshTimer) clearInterval(nextRefreshTimer);
+      nextRefreshTimer = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((nextAt - Date.now()) / 1000));
+        document.querySelector("#nextRefresh").textContent = `next refresh in ${remaining}s`;
+      }, 1000);
+    }
+
     async function loadMonitor() {
-      const response = await fetch("./public-monitor.json", { cache: "no-store" });
+      const response = await fetch(`./public-monitor.json?t=${Date.now()}`, { cache: "no-store" });
       if (!response.ok) throw new Error("public-monitor.json not found");
       const data = await response.json();
       const seed = data.agi_seed || {};
       const topic = data.active_daily_topic || {};
       const maturity = seed.maturity || {};
+      const generatedAt = data.generated_at || "";
       document.querySelector("#seedName").textContent = seed.name || "Open AGI Seed";
       document.querySelector("#seedPurpose").textContent = seed.purpose_ko || "";
       document.querySelector("#topicTitle").textContent = topic.id ? `${topic.id} ${topic.title_ko || ""}` : "no topic";
       document.querySelector("#topicQuestion").textContent = topic.question_ko || "";
       document.querySelector("#maturity").textContent =
         `answers ${maturity.questions_answered || 0}, evidence ${maturity.evidence_backed_answers || 0}, critique ${maturity.critique_or_revision_answers || 0}, topics ${maturity.topic_coverage || 0}`;
-      document.querySelector("#generatedAt").textContent = `generated ${data.generated_at || ""}`;
+      document.querySelector("#generatedAt").textContent = `generated ${generatedAt}`;
+      document.querySelector("#lastChecked").textContent =
+        `checked ${formatLocalTime()}${lastLoadedGeneratedAt && lastLoadedGeneratedAt !== generatedAt ? " · updated" : ""}`;
+      lastLoadedGeneratedAt = generatedAt;
       document.querySelector("#ledgerStatus").textContent = `${(data.ledger_errors || []).length} ledger errors`;
       document.querySelector("#monitor").innerHTML = (data.messages || []).map(message => `
         <article class="bubble ${escapeHtml(message.kind)}">
@@ -125,10 +148,24 @@
           ${message.evidence ? `<div class="sub">${escapeHtml(message.evidence)}</div>` : ""}
         </article>
       `).join("");
+      startRefreshCountdown();
     }
 
-    loadMonitor().catch(error => {
-      document.querySelector("#monitor").innerHTML = `<article class="bubble"><div class="content">${escapeHtml(error.message)}</div></article>`;
+    async function refreshMonitor() {
+      try {
+        await loadMonitor();
+      } catch (error) {
+        document.querySelector("#lastChecked").textContent = `checked ${formatLocalTime()} · error`;
+        document.querySelector("#nextRefresh").textContent = "retrying in 30s";
+        document.querySelector("#monitor").innerHTML = `<article class="bubble"><div class="content">${escapeHtml(error.message)}</div></article>`;
+      }
+    }
+
+    refreshMonitor();
+    setInterval(refreshMonitor, REFRESH_MS);
+
+    window.addEventListener("beforeunload", () => {
+      if (nextRefreshTimer) clearInterval(nextRefreshTimer);
     });
   </script>
 </body>

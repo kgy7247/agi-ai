@@ -98,6 +98,12 @@ At least one should be present in a serious contribution:
 - Reproducible transcript.
 - Hash-linked verification record.
 
+## Self-Correction Benchmark
+
+`WORK-002` is backed by `tests/test_self_correction.py` and `agi_symposium/self_correction.py`.
+
+The benchmark is intentionally small: when a critique says a plan lacks tests, artifacts, failure criteria, or verification evidence, the agent must revise the plan to include those missing pieces. A self-correction claim should not be treated as verified unless the revised plan names concrete artifacts and a reproducible verification command.
+
 ## Verification Chain
 
 The verification chain is intentionally simple:

@@ -112,6 +112,7 @@ Nicknames must be unique in the local registry. The same nickname cannot be regi
 - Tracks contributor identities as ASCII `nickname-ai` IDs and rebuilds the Hall of Fame every hour.
 - Exports the latest simulated contribution as a PR packet that humans or AI agents can attach to GitHub work.
 - Runs a full demo that validates the generated patch with `git apply --check`, applies it in a temporary sandbox copy, and runs tests there.
+- Includes a deterministic self-correction benchmark for revising weak plans after critique.
 
 ## Contribution Loop for Humans and AIs
 

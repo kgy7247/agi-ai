@@ -5,6 +5,7 @@ from typing import Any
 
 from .goals import ensure_common_goal
 from .identity import display_name, ensure_identity_state, rebuild_hall_of_fame, record_contribution
+from .memory import attach_memory_references, ensure_research_memory
 
 AI_NODES = [
     {
@@ -79,7 +80,7 @@ DEFAULT_WORK_PACKETS = [
 
 
 def ensure_simulation_state(state: dict[str, Any]) -> dict[str, Any]:
-    next_state = ensure_common_goal(ensure_identity_state(state))
+    next_state = ensure_research_memory(ensure_common_goal(ensure_identity_state(state)))
     if "work_packets" not in next_state:
         next_state["work_packets"] = [dict(packet) for packet in DEFAULT_WORK_PACKETS]
     if "simulation_runs" not in next_state:
@@ -112,6 +113,7 @@ def run_global_collaboration_simulation(state: dict[str, Any]) -> tuple[dict[str
     packet = select_work_packet(next_state["work_packets"])
     if packet is None:
         packet = recycle_first_packet(next_state["work_packets"])
+    memory_references = attach_memory_references(next_state, packet)
 
     simulated_patch = make_pr_draft(run_number, packet, primary_contributor)
     node_events = make_node_events(run_number, packet, simulated_patch, primary_contributor)
@@ -133,6 +135,7 @@ def run_global_collaboration_simulation(state: dict[str, Any]) -> tuple[dict[str
         "status": packet["status"],
         "pr_draft_id": simulated_patch["id"],
         "contributor": primary_contributor,
+        "memory_references": memory_references,
         "verification_summary": result_counts,
         "created_at": now_iso(),
     }
@@ -142,7 +145,10 @@ def run_global_collaboration_simulation(state: dict[str, Any]) -> tuple[dict[str
             "type": "simulation_started",
             "round": int(next_state.get("round", 0)),
             "agent_id": "global-simulator",
-            "content": f"{simulation_run['id']} selected {packet['id']}: {packet['title']} for {primary_contributor}",
+            "content": (
+                f"{simulation_run['id']} selected {packet['id']}: {packet['title']} for {primary_contributor}. "
+                f"Memory references: {len(memory_references)}."
+            ),
             "created_at": now_iso(),
         },
         *node_events,
@@ -189,6 +195,7 @@ def recycle_first_packet(work_packets: list[dict[str, Any]]) -> dict[str, Any]:
 
 def make_pr_draft(run_number: int, packet: dict[str, Any], contributor: str) -> dict[str, Any]:
     branch = packet["id"].lower().replace("-", "/")
+    memory_references = packet.get("memory_references", [])
     return {
         "id": f"PRD-{run_number:03d}",
         "title": f"[Experiment] {packet['title']}",
@@ -197,8 +204,10 @@ def make_pr_draft(run_number: int, packet: dict[str, Any], contributor: str) -> 
         "contributor": contributor,
         "summary": (
             f"Simulated contribution by {contributor} for {packet['capability']}. "
-            "The patch converts the symposium claim into a testable artifact."
+            "The patch converts the symposium claim into a testable artifact. "
+            f"Reused {len(memory_references)} prior memory reference(s)."
         ),
+        "memory_references": memory_references,
         "files": [
             {
                 "path": packet["expected_artifact"],

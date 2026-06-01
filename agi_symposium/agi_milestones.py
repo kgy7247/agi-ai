@@ -166,6 +166,8 @@ def demo_evidence() -> dict[str, bool]:
         "local_llm_node_pass": True,
         "verification_ledger_clean": True,
         "self_correction_benchmark": True,
+        "persistent_state_survives_restart": True,
+        "memory_used_in_new_packet": True,
         "candidate_label_only": True,
     }
 

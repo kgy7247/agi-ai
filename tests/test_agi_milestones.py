@@ -12,6 +12,7 @@ class AgiMilestoneTests(unittest.TestCase):
 
         self.assertIn("M0", passed_ids)
         self.assertIn("M1", passed_ids)
+        self.assertIn("M2", passed_ids)
         self.assertFalse(assessment["agi_candidate"])
 
     def test_all_required_evidence_marks_agi_candidate(self):

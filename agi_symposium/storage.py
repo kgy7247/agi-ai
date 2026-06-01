@@ -6,6 +6,7 @@ from typing import Any
 
 from .engine import initial_state
 from .goals import ensure_common_goal
+from .memory import ensure_research_memory, refresh_memory_milestone_evidence
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,7 +28,8 @@ def load_state() -> dict[str, Any]:
         save_state(state)
         return state
     with STATE_PATH.open("r", encoding="utf-8") as handle:
-        return ensure_common_goal(json.load(handle))
+        state = ensure_research_memory(ensure_common_goal(json.load(handle)))
+        return refresh_memory_milestone_evidence(state, persisted=True)
 
 
 def save_state(state: dict[str, Any]) -> None:

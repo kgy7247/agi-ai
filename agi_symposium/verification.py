@@ -28,6 +28,7 @@ def make_verification_record(
     result: str,
     evidence: str,
     previous_hash: str = "GENESIS",
+    metadata: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if result not in {"pass", "fail", "needs-review"}:
         raise ValueError("result must be pass, fail, or needs-review")
@@ -41,6 +42,8 @@ def make_verification_record(
         "evidence": evidence.strip(),
         "previous_hash": previous_hash,
     }
+    if metadata:
+        record["metadata"] = metadata
     missing = [key for key in ("claim", "artifact", "verifier", "evidence") if not record[key]]
     if missing:
         raise ValueError(f"missing required fields: {', '.join(missing)}")
@@ -88,4 +91,3 @@ def verify_ledger(path: Path) -> list[str]:
             errors.append(f"line {index}: hash mismatch")
         previous_hash = str(record.get("hash") or "")
     return errors
-

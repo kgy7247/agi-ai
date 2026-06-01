@@ -168,6 +168,8 @@ def demo_evidence() -> dict[str, bool]:
         "self_correction_benchmark": True,
         "persistent_state_survives_restart": True,
         "memory_used_in_new_packet": True,
+        "tool_check_pass": True,
+        "tool_check_failure_recorded": True,
         "candidate_label_only": True,
     }
 

@@ -17,6 +17,7 @@ from .storage import (
     reset_state,
     save_state,
 )
+from .tool_verification import append_tool_verification, refresh_tool_milestone_evidence
 from .verification import append_verification, make_verification_record, read_ledger
 from .workflow import apply_patch_and_run_tests_in_sandbox, validate_patch_with_git
 
@@ -45,6 +46,22 @@ def run_full_demo(
     patch_path = Path(file_paths["patch"])
     patch_validation = validate_patch_with_git(patch_path, ROOT)
     sandbox_result = apply_patch_and_run_tests_in_sandbox(patch_path, ROOT)
+    tool_records = [
+        append_tool_verification(
+            VERIFICATION_LEDGER_PATH,
+            claim="Exported patch must apply cleanly before review.",
+            artifact=str(patch_path),
+            verifier="demo-tool-runner",
+            tool_result=patch_validation,
+        ),
+        append_tool_verification(
+            VERIFICATION_LEDGER_PATH,
+            claim="Exported patch must pass sandbox tests before review.",
+            artifact=str(patch_path),
+            verifier="demo-tool-runner",
+            tool_result=sandbox_result,
+        ),
+    ]
 
     demo_run = {
         "id": f"DEMO-{len(state.get('demo_runs', [])) + 1:03d}",
@@ -71,6 +88,7 @@ def run_full_demo(
     state = record_contribution(state, str(export_record.get("contributor") or ""), "export")
     state = record_contribution(state, state["local_profile"]["display_name"], "demo_run")
     state = rebuild_hall_of_fame(state)
+    state = refresh_tool_milestone_evidence(state, saved_records + tool_records)
     save_state(state)
     append_events(events + [demo_event])
 
@@ -79,7 +97,7 @@ def run_full_demo(
         "demo_run": demo_run,
         "export": export_record,
         "file_paths": file_paths,
-        "verification_records": saved_records,
+        "verification_records": saved_records + tool_records,
         "state": state,
     }
 
@@ -96,4 +114,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

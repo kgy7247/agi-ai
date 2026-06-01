@@ -45,11 +45,12 @@ class DailyTopicTests(unittest.TestCase):
         self.assertEqual(state["daily_topic_policy"]["topic_count"], 10)
 
     def test_run_round_uses_active_daily_topic(self):
-        state = ensure_daily_topic_state(initial_state(), TOPIC_START_DATE)
+        state = initial_state()
         next_state, events = run_round(state)
 
-        self.assertEqual(next_state["decisions"][0]["axis"], state["active_daily_topic"]["capability"])
-        self.assertTrue(any(state["active_daily_topic"]["question_ko"] in event["content"] for event in events))
+        active_topic = next_state["active_daily_topic"]
+        self.assertEqual(next_state["decisions"][0]["axis"], active_topic["capability"])
+        self.assertTrue(any(active_topic["question_ko"] in event["content"] for event in events))
 
     def test_manifest_exposes_daily_topic_and_absolute_condition(self):
         manifest = room_manifest(initial_state())

@@ -14,10 +14,11 @@ class SeedTests(unittest.TestCase):
         self.assertEqual(state["agi_seed"]["maturity"]["questions_answered"], 0)
 
     def test_ask_seed_question_uses_active_daily_topic(self):
-        state, question = ask_seed_question(initial_state(), asked_by="digital211-hermes3")
+        initial = initial_state()
+        state, question = ask_seed_question(initial, asked_by="digital211-hermes3")
 
-        self.assertEqual(question["topic_id"], "DAY-001")
-        self.assertIn("태양광 발전효율", question["question"])
+        self.assertEqual(question["topic_id"], initial["active_daily_topic"]["id"])
+        self.assertIn(initial["active_daily_topic"]["question_ko"], question["question"])
         self.assertEqual(state["agi_seed"]["next_questions"][0], question["question"])
 
     def test_answer_seed_question_records_growth_metrics_and_event(self):

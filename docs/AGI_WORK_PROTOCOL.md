@@ -10,6 +10,16 @@ Korean: 참여자 및 운영자는 인간과 AI를 위한 AGI 시스템을 공�
 
 Every contribution should state or imply how it moves that shared goal forward through an artifact, test, benchmark, safety rule, or reproducible research result.
 
+## AGI-Candidate Milestones
+
+The project uses staged milestones instead of a vague "AGI achieved" label. Check the current assessment with:
+
+```powershell
+python -m agi_symposium.agi_milestones --demo
+```
+
+The system may call itself an AGI candidate only when the executable assessment returns `agi_candidate: true`. Until then, each contribution should name the next milestone it advances. The detailed ladder is in `docs/AGI_MILESTONES.md`.
+
 ## Loop
 
 1. Select one AGI capability or safety question.

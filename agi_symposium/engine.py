@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from .agi_milestones import assess_milestones, demo_evidence
 from .goals import COMMON_GOAL, COMMON_GOAL_KO
 from .identity import make_profile
 from .simulation import AI_NODES, DEFAULT_WORK_PACKETS
@@ -113,6 +114,8 @@ def initial_state() -> dict[str, Any]:
         "pr_drafts": [],
         "exports": [],
         "demo_runs": [],
+        "agi_milestone_evidence": demo_evidence(),
+        "agi_milestone_assessment": assess_milestones(demo_evidence()),
         "scorecard": {
             "persistent memory": {"pass": 0, "fail": 0, "needs-review": 0},
             "self-correction": {"pass": 0, "fail": 0, "needs-review": 0},

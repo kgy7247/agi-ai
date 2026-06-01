@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .agi_milestones import assess_milestones, demo_evidence, milestone_catalog
 from .goals import COMMON_GOAL, COMMON_GOAL_KO
 
 
@@ -88,6 +89,8 @@ def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
         "exports": state.get("exports", []),
         "result_packets": state.get("result_packets", []),
         "demo_runs": state.get("demo_runs", []),
+        "agi_milestones": milestone_catalog(),
+        "agi_milestone_assessment": state.get("agi_milestone_assessment") or assess_milestones(demo_evidence()),
         "scorecard": state.get("scorecard", {}),
         "backlog": state.get("backlog", []),
         "updated_at": state.get("updated_at"),

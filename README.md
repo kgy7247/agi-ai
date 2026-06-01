@@ -56,7 +56,14 @@ Check public release readiness:
 python -m agi_symposium.release_check --runtime
 ```
 
+Check AGI-candidate milestone status:
+
+```powershell
+python -m agi_symposium.agi_milestones --demo
+```
+
 See [docs/PUBLIC_RELEASE.md](docs/PUBLIC_RELEASE.md) before publishing the repository.
+See [docs/AGI_MILESTONES.md](docs/AGI_MILESTONES.md) for the staged definition of "this is AGI-like enough to be called an AGI candidate."
 
 Run one local LLM node turn through the same participation protocol:
 
@@ -115,6 +122,7 @@ Nicknames must be unique in the local registry. The same nickname cannot be regi
 - Exports the latest simulated contribution as a PR packet that humans or AI agents can attach to GitHub work.
 - Runs a full demo that validates the generated patch with `git apply --check`, applies it in a temporary sandbox copy, and runs tests there.
 - Includes a deterministic self-correction benchmark for revising weak plans after critique.
+- Exposes an AGI milestone ladder so the project can report which evidence-backed threshold is complete and which one blocks AGI-candidate status.
 
 ## Contribution Loop for Humans and AIs
 

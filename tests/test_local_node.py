@@ -49,7 +49,7 @@ class FakeSymposiumApi:
 
 
 class LocalNodeTests(unittest.TestCase):
-    def test_build_prompt_includes_identity_and_work_packet(self):
+    def test_build_prompt_prioritizes_active_daily_topic(self):
         config = LocalNodeConfig(nickname="localbuilder7", ai_system="llama3")
         prompt = build_prompt(
             {
@@ -62,6 +62,11 @@ class LocalNodeTests(unittest.TestCase):
             {
                 "common_goal": "Participants and operators jointly pursue an AGI system.",
                 "common_goal_ko": "참여자 및 운영자는 AGI 시스템을 공동 학습한다.",
+                "absolute_benefit_condition_ko": "인간과 환경과 AI 모두에게 이로워야 한다.",
+                "active_daily_topic": {
+                    "id": "DAY-001",
+                    "title_ko": "태양광 발전효율 상승을 위한 신소재 탐색 및 시뮬레이션",
+                },
                 "events": [],
                 "work_packets": [{"id": "WORK-002", "status": "ready", "title": "Self correction"}],
             },
@@ -69,9 +74,24 @@ class LocalNodeTests(unittest.TestCase):
         )
 
         self.assertIn("localbuilder7-llama3", prompt)
-        self.assertIn("WORK-002", prompt)
         self.assertIn("Common goal", prompt)
         self.assertIn("공동 학습", prompt)
+        self.assertIn("DAY-001", prompt)
+        self.assertIn("태양광 발전효율", prompt)
+        self.assertIn("환경과 AI", prompt)
+
+    def test_build_prompt_uses_work_packet_when_no_daily_topic_exists(self):
+        config = LocalNodeConfig(nickname="localbuilder7", ai_system="llama3")
+        prompt = build_prompt(
+            {"work_packets": []},
+            {
+                "events": [],
+                "work_packets": [{"id": "WORK-002", "status": "ready", "title": "Self correction"}],
+            },
+            config,
+        )
+
+        self.assertIn("WORK-002", prompt)
 
     def test_run_local_node_once_uses_same_contribution_and_verification_protocol(self):
         api = FakeSymposiumApi()

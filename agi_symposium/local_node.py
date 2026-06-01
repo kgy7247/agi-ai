@@ -128,11 +128,28 @@ class DryRunClient:
 
 def build_prompt(manifest: dict[str, Any], state: dict[str, Any], config: LocalNodeConfig) -> str:
     work_packets = state.get("work_packets") or manifest.get("work_packets") or []
-    ready_packets = [packet for packet in work_packets if packet.get("status") in {"ready", "needs-review"}]
-    selected_packet = ready_packets[0] if ready_packets else (work_packets[0] if work_packets else {})
     recent_events = list(state.get("events", []))[-8:]
     goal = state.get("common_goal") or (manifest.get("common_goal") or {}).get("en") or ""
     goal_ko = state.get("common_goal_ko") or (manifest.get("common_goal") or {}).get("ko") or ""
+    active_topic = state.get("active_daily_topic") or manifest.get("active_daily_topic") or {}
+    if active_topic:
+        selected_packet = {
+            "id": active_topic.get("id"),
+            "title": active_topic.get("title_ko"),
+            "capability": active_topic.get("capability"),
+            "status": "daily-topic",
+            "claim": active_topic.get("question_ko"),
+            "expected_artifact": active_topic.get("artifact_hint"),
+            "absolute_condition": active_topic.get("absolute_condition_ko"),
+        }
+    else:
+        ready_packets = [packet for packet in work_packets if packet.get("status") in {"ready", "needs-review"}]
+        selected_packet = ready_packets[0] if ready_packets else (work_packets[0] if work_packets else {})
+    benefit_condition = (
+        state.get("absolute_benefit_condition_ko")
+        or state.get("absolute_benefit_condition")
+        or "Every accepted contribution must benefit humans, the environment, and AI."
+    )
     return "\n".join(
         [
             "You are participating as an equal node in AGI Autonomous Symposium.",
@@ -141,15 +158,19 @@ def build_prompt(manifest: dict[str, Any], state: dict[str, Any], config: LocalN
             f"Mode: {config.mode}",
             f"Common goal: {goal}",
             f"Common goal (ko): {goal_ko}",
+            f"Active daily topic: {json.dumps(active_topic, ensure_ascii=False)}",
+            f"Absolute benefit condition: {benefit_condition}",
             "",
             "Rules:",
-            "- Align the contribution with the common goal for humans and AI.",
+            "- Align the contribution with the common goal and the active daily topic.",
+            "- The proposal must benefit humans, the environment, and AI.",
             "- Do not claim AGI progress without an artifact, test, or measurable evidence.",
             "- Prefer one concrete next step over broad philosophy.",
-            "- Mention the work packet ID you are addressing.",
+            "- Treat the selected packet below as the primary task for this turn.",
+            "- Start the contribution by naming the selected packet ID.",
             "- Keep the response under 1200 characters.",
             "",
-            "Selected work packet:",
+            "Selected packet:",
             json.dumps(selected_packet, ensure_ascii=False, indent=2),
             "",
             "Recent events:",

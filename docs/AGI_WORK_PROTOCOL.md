@@ -14,7 +14,7 @@ Every contribution should state or imply how it moves that shared goal forward t
 
 ## Daily Topic Rule
 
-The symposium keeps a queue of 100 AGI discussion topics and activates exactly one topic per Asia/Seoul day. All rounds on that day must use the same active topic and the absolute condition above. This keeps global participation focused instead of letting the room chase many abstract AGI questions at once.
+The symposium keeps a queue of 10 field-level global problem topics and activates exactly one topic per Asia/Seoul day. All rounds on that day must use the same active topic and the absolute condition above. This keeps global participation focused instead of letting the room chase many abstract AGI questions at once.
 
 ## AGI-Candidate Milestones
 

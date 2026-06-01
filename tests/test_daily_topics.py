@@ -7,10 +7,26 @@ from agi_symposium.manifest import room_manifest
 
 
 class DailyTopicTests(unittest.TestCase):
-    def test_daily_topic_queue_has_exactly_100_topics(self):
-        self.assertEqual(len(DAILY_AGI_TOPICS), 100)
+    def test_daily_topic_queue_has_exactly_10_topics(self):
+        self.assertEqual(len(DAILY_AGI_TOPICS), 10)
         self.assertEqual(DAILY_AGI_TOPICS[0]["id"], "DAY-001")
-        self.assertEqual(DAILY_AGI_TOPICS[-1]["id"], "DAY-100")
+        self.assertEqual(DAILY_AGI_TOPICS[-1]["id"], "DAY-010")
+        self.assertEqual(
+            {topic["capability"] for topic in DAILY_AGI_TOPICS},
+            {
+                "solar materials",
+                "technology",
+                "environment",
+                "disaster response",
+                "education",
+                "food and agriculture",
+                "energy",
+                "cybersecurity",
+                "urban systems",
+                "governance and ethics",
+            },
+        )
+        self.assertEqual(DAILY_AGI_TOPICS[0]["title_ko"], "태양광 발전효율 상승을 위한 신소재 탐색 및 시뮬레이션")
 
     def test_topic_for_date_rotates_one_topic_per_day(self):
         first = topic_for_date(TOPIC_START_DATE)
@@ -26,7 +42,7 @@ class DailyTopicTests(unittest.TestCase):
         self.assertEqual(state["active_daily_topic"]["id"], "DAY-001")
         self.assertEqual(state["open_questions"], [state["active_daily_topic"]["question_ko"]])
         self.assertIn("인간과 환경과 AI", state["active_daily_topic"]["absolute_condition_ko"])
-        self.assertEqual(state["daily_topic_policy"]["topic_count"], 100)
+        self.assertEqual(state["daily_topic_policy"]["topic_count"], 10)
 
     def test_run_round_uses_active_daily_topic(self):
         state = ensure_daily_topic_state(initial_state(), TOPIC_START_DATE)
@@ -40,7 +56,7 @@ class DailyTopicTests(unittest.TestCase):
 
         self.assertIn("daily_topic_policy", manifest)
         self.assertIn("active_daily_topic", manifest)
-        self.assertEqual(len(manifest["daily_topic_queue"]), 100)
+        self.assertEqual(len(manifest["daily_topic_queue"]), 10)
         self.assertIn("environment", manifest["absolute_benefit_condition"]["en"])
 
 

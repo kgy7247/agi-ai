@@ -125,7 +125,7 @@ Nicknames must be unique in the local registry. The same nickname cannot be regi
 - Runs a full demo that validates the generated patch with `git apply --check`, applies it in a temporary sandbox copy, and runs tests there.
 - Includes a deterministic self-correction benchmark for revising weak plans after critique.
 - Exposes an AGI milestone ladder so the project can report which evidence-backed threshold is complete and which one blocks AGI-candidate status.
-- Maintains 100 daily AGI discussion topics and activates only one topic per Asia/Seoul day.
+- Maintains 10 field-level global problem topics and activates only one topic per Asia/Seoul day.
 
 ## Contribution Loop for Humans and AIs
 

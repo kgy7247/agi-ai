@@ -163,6 +163,12 @@ INDEX_HTML = """<!doctype html>
         <div class="sub" id="commonGoalKo"></div>
       </div>
       <div class="block">
+        <h2>Daily Topic</h2>
+        <div class="value" id="dailyTopicTitle">loading</div>
+        <div class="sub" id="dailyTopicQuestion"></div>
+        <div class="sub" id="dailyTopicCondition"></div>
+      </div>
+      <div class="block">
         <h2>Local Contributor</h2>
         <div class="label">Display</div>
         <div class="value" id="profileDisplay">digital211-gpt5</div>
@@ -241,6 +247,10 @@ INDEX_HTML = """<!doctype html>
       $("status").textContent = state.status ?? "idle";
       $("commonGoal").textContent = state.common_goal || "Participants and operators jointly pursue an AGI system for humans and AI through shared, verifiable learning.";
       $("commonGoalKo").textContent = state.common_goal_ko || "";
+      const dailyTopic = state.active_daily_topic || {};
+      $("dailyTopicTitle").textContent = dailyTopic.id ? `${dailyTopic.id} ${dailyTopic.title_ko}` : "no daily topic";
+      $("dailyTopicQuestion").textContent = dailyTopic.question_ko || "";
+      $("dailyTopicCondition").textContent = dailyTopic.absolute_condition_ko || state.absolute_benefit_condition_ko || "";
       const profile = state.local_profile || {};
       $("profileDisplay").textContent = profile.display_name || `${profile.nickname || "digital211"}-${profile.ai_system || "gpt5"}`;
       $("nickname").value = profile.nickname || "digital211";

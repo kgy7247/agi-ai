@@ -23,7 +23,9 @@ class EngineTests(unittest.TestCase):
     def test_manifest_exposes_common_goal(self):
         manifest = room_manifest(initial_state())
 
-        self.assertIn("humans and AI", manifest["common_goal"]["en"])
+        self.assertIn("humans", manifest["common_goal"]["en"])
+        self.assertIn("environment", manifest["common_goal"]["en"])
+        self.assertIn("AI", manifest["common_goal"]["en"])
         self.assertIn("공동 학습", manifest["common_goal"]["ko"])
         self.assertEqual(manifest["room"]["common_goal"], manifest["common_goal"]["en"])
 

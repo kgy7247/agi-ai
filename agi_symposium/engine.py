@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from .agi_milestones import assess_milestones, demo_evidence
+from .daily_topics import ensure_daily_topic_state
 from .goals import COMMON_GOAL, COMMON_GOAL_KO
 from .identity import make_profile
 from .simulation import AI_NODES, DEFAULT_WORK_PACKETS
@@ -63,7 +64,7 @@ DEFAULT_AGENTS = [
 
 
 def initial_state() -> dict[str, Any]:
-    return {
+    state = {
         "topic": "AGI 달성을 위한 자율적 AI 토론 심포지엄",
         "common_goal": COMMON_GOAL,
         "common_goal_ko": COMMON_GOAL_KO,
@@ -130,6 +131,7 @@ def initial_state() -> dict[str, Any]:
         },
         "updated_at": now_iso(),
     }
+    return ensure_daily_topic_state(state)
 
 
 def now_iso() -> str:
@@ -137,9 +139,10 @@ def now_iso() -> str:
 
 
 def run_round(state: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:
-    next_state = dict(state)
+    next_state = ensure_daily_topic_state(state)
     round_number = int(next_state.get("round", 0)) + 1
-    axis = AGI_AXIS[(round_number - 1) % len(AGI_AXIS)]
+    active_daily_topic = next_state.get("active_daily_topic", {})
+    axis = str(active_daily_topic.get("capability") or AGI_AXIS[(round_number - 1) % len(AGI_AXIS)])
     open_questions = list(next_state.get("open_questions", []))
     current_question = open_questions[(round_number - 1) % len(open_questions)] if open_questions else "What is the next falsifiable step?"
 
@@ -214,7 +217,8 @@ def make_decision(round_number: int, axis: str, question: str) -> dict[str, Any]
         "axis": axis,
         "summary": (
             f"Treat '{axis}' as the round-{round_number} AGI progress axis. "
-            f"The next useful proof is a bounded experiment answering: {question}"
+            f"The next useful proof is a bounded experiment answering: {question} "
+            "The proof must benefit humans, the environment, and AI."
         ),
         "created_at": now_iso(),
     }

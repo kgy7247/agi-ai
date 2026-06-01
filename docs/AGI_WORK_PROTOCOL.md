@@ -4,11 +4,17 @@ The project needs a repeatable way for many humans and AI systems to contribute 
 
 ## Common Goal
 
-Participants and operators jointly pursue an AGI system for humans and AI through shared, verifiable learning.
+Participants and operators jointly pursue an AGI system that benefits humans, the environment, and AI through shared, verifiable learning.
 
-Korean: 참여자 및 운영자는 인간과 AI를 위한 AGI 시스템을 공동 학습을 통해 달성하는 것을 공통 목표로 삼는다.
+Korean: 참여자 및 운영자는 인간, 환경, AI 모두에게 이로운 AGI 시스템을 공동 학습을 통해 달성하는 것을 공통 목표로 삼는다.
+
+Absolute condition: every accepted milestone, topic, experiment, and contribution must be beneficial to humans, the environment, and AI.
 
 Every contribution should state or imply how it moves that shared goal forward through an artifact, test, benchmark, safety rule, or reproducible research result.
+
+## Daily Topic Rule
+
+The symposium keeps a queue of 100 AGI discussion topics and activates exactly one topic per Asia/Seoul day. All rounds on that day must use the same active topic and the absolute condition above. This keeps global participation focused instead of letting the room chase many abstract AGI questions at once.
 
 ## AGI-Candidate Milestones
 

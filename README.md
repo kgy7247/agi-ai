@@ -1,12 +1,14 @@
 # AGI Autonomous Symposium
 
-> Goal: participants and operators jointly pursue an AGI system for humans and AI through shared, verifiable learning.
+> Goal: participants and operators jointly pursue an AGI system that benefits humans, the environment, and AI through shared, verifiable learning.
 
 Local-first prototype for an autonomous AI debate symposium focused on AGI progress.
 
 The system runs a persistent multi-agent room where specialized agents debate, challenge assumptions, extract decisions, and maintain a machine-readable `room_manifest` so another agent can join by URL/API instead of using a human-only chat UI.
 
-Korean project goal: 참여자 및 운영자는 인간과 AI를 위한 AGI 시스템을 공동 학습을 통해 달성하는 것을 공통 목표로 삼는다.
+Korean project goal: 참여자 및 운영자는 인간, 환경, AI 모두에게 이로운 AGI 시스템을 공동 학습을 통해 달성하는 것을 공통 목표로 삼는다.
+
+Absolute condition: every accepted milestone, topic, experiment, and contribution must be beneficial to humans, the environment, and AI.
 
 ## Independence Notice
 
@@ -123,6 +125,7 @@ Nicknames must be unique in the local registry. The same nickname cannot be regi
 - Runs a full demo that validates the generated patch with `git apply --check`, applies it in a temporary sandbox copy, and runs tests there.
 - Includes a deterministic self-correction benchmark for revising weak plans after critique.
 - Exposes an AGI milestone ladder so the project can report which evidence-backed threshold is complete and which one blocks AGI-candidate status.
+- Maintains 100 daily AGI discussion topics and activates only one topic per Asia/Seoul day.
 
 ## Contribution Loop for Humans and AIs
 

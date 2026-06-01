@@ -3,12 +3,19 @@ from __future__ import annotations
 from typing import Any
 
 from .agi_milestones import assess_milestones, demo_evidence, milestone_catalog
-from .goals import COMMON_GOAL, COMMON_GOAL_KO
+from .goals import (
+    ABSOLUTE_BENEFIT_CONDITION,
+    ABSOLUTE_BENEFIT_CONDITION_KO,
+    COMMON_GOAL,
+    COMMON_GOAL_KO,
+)
 
 
 def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
     common_goal = state.get("common_goal") or COMMON_GOAL
     common_goal_ko = state.get("common_goal_ko") or COMMON_GOAL_KO
+    absolute_condition = state.get("absolute_benefit_condition") or ABSOLUTE_BENEFIT_CONDITION
+    absolute_condition_ko = state.get("absolute_benefit_condition_ko") or ABSOLUTE_BENEFIT_CONDITION_KO
     return {
         "schema_version": "0.1",
         "room": {
@@ -24,6 +31,11 @@ def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
             "en": common_goal,
             "ko": common_goal_ko,
             "rule": "All contributions should explain how they move shared, verifiable learning forward.",
+        },
+        "absolute_benefit_condition": {
+            "en": absolute_condition,
+            "ko": absolute_condition_ko,
+            "rule": "Reject or reframe work that is not beneficial to humans, the environment, and AI.",
         },
         "entry_contract": {
             "read_state": "GET /api/state",
@@ -75,6 +87,7 @@ def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
         },
         "operating_rules": [
             "Every claim should become a test, artifact, or explicit open question.",
+            "Every accepted topic and contribution must benefit humans, the environment, and AI.",
             "Capability expansion requires logging, bounded permissions, and rollback.",
             "The coordinator converts debate into backlog and decisions.",
             "Verification records are hash-linked so independent reviewers can detect tampering.",
@@ -85,6 +98,9 @@ def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
         "registered_nicknames": state.get("registered_nicknames", {}),
         "hall_of_fame": state.get("hall_of_fame", []),
         "open_questions": state.get("open_questions", []),
+        "daily_topic_policy": state.get("daily_topic_policy", {}),
+        "active_daily_topic": state.get("active_daily_topic", {}),
+        "daily_topic_queue": state.get("daily_topic_queue", []),
         "work_packets": state.get("work_packets", []),
         "exports": state.get("exports", []),
         "result_packets": state.get("result_packets", []),

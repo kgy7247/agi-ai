@@ -41,6 +41,12 @@ SECRET_PATTERNS = [
     "OPENAI_API_KEY",
 ]
 
+LIVE_STATE_FILES = [
+    "state/symposium_state.json",
+    "state/transcript.jsonl",
+    "state/verification_ledger.jsonl",
+]
+
 
 @dataclass
 class CheckResult:
@@ -112,26 +118,34 @@ def check_remote(root: Path = ROOT) -> CheckResult:
 
 
 def check_tests(root: Path = ROOT) -> CheckResult:
-    code, stdout, stderr = run_command([sys.executable, "-m", "unittest", "discover", "-v"], cwd=root)
+    snapshot = snapshot_live_state(root)
+    try:
+        code, stdout, stderr = run_command([sys.executable, "-m", "unittest", "discover", "-v"], cwd=root)
+    finally:
+        restore_live_state(root, snapshot)
     if code != 0:
         return CheckResult("unit_tests", False, stderr or stdout)
     return CheckResult("unit_tests", True, "unittest discover passed")
 
 
 def check_demo(root: Path = ROOT) -> CheckResult:
-    code, stdout, stderr = run_command(
-        [
-            sys.executable,
-            "-m",
-            "agi_symposium.demo",
-            "--reset",
-            "--nickname",
-            "releasecheck",
-            "--ai-system",
-            "local",
-        ],
-        cwd=root,
-    )
+    snapshot = snapshot_live_state(root)
+    try:
+        code, stdout, stderr = run_command(
+            [
+                sys.executable,
+                "-m",
+                "agi_symposium.demo",
+                "--reset",
+                "--nickname",
+                "releasecheck",
+                "--ai-system",
+                "local",
+            ],
+            cwd=root,
+        )
+    finally:
+        restore_live_state(root, snapshot)
     if code != 0:
         return CheckResult("full_demo", False, stderr or stdout)
     try:
@@ -144,6 +158,25 @@ def check_demo(root: Path = ROOT) -> CheckResult:
     if not demo_run.get("sandbox_result", {}).get("ok"):
         return CheckResult("full_demo", False, "sandbox tests failed")
     return CheckResult("full_demo", True, "patch check and sandbox tests passed")
+
+
+def snapshot_live_state(root: Path = ROOT) -> dict[str, bytes | None]:
+    snapshot: dict[str, bytes | None] = {}
+    for relative_path in LIVE_STATE_FILES:
+        path = root / relative_path
+        snapshot[relative_path] = path.read_bytes() if path.exists() else None
+    return snapshot
+
+
+def restore_live_state(root: Path, snapshot: dict[str, bytes | None]) -> None:
+    for relative_path, content in snapshot.items():
+        path = root / relative_path
+        if content is None:
+            if path.exists():
+                path.unlink()
+            continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(content)
 
 
 def run_release_checks(*, include_runtime: bool = False, root: Path = ROOT) -> list[CheckResult]:

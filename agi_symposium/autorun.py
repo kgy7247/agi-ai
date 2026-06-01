@@ -21,6 +21,7 @@ from .local_node import (
     make_llm_client,
     run_local_node_once,
 )
+from .public_monitor import write_public_monitor_snapshot
 from .server import is_local_host
 from .storage import STATE_DIR
 
@@ -121,6 +122,7 @@ def run_autorun_cycle(
     export_result: dict[str, Any] | None = None
     if config.export_result_packet:
         export_result = api.post_json("/api/result-packets/export", {"contributor": config.display_name})
+    public_snapshot = write_public_monitor_snapshot()
     hall_of_fame = api.post_json("/api/hall-of-fame/rebuild", {})
     state = api.get_json("/api/state")
     active_topic = state.get("active_daily_topic") or {}
@@ -135,6 +137,7 @@ def run_autorun_cycle(
         "verification_hash": node_result.get("verification", {}).get("hash"),
         "result_packet_id": (export_result or {}).get("packet", {}).get("id"),
         "seed_answer_id": (seed_answer or {}).get("record", {}).get("id"),
+        "public_monitor_messages": len(public_snapshot.get("messages", [])),
         "hall_of_fame_rank": find_rank(hall_of_fame.get("hall_of_fame", []), config.display_name),
         "content_guard": node_result.get("content_guard", {}),
     }

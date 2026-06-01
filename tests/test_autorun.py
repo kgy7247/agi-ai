@@ -63,7 +63,7 @@ class AutoRunTests(unittest.TestCase):
             log_path = Path(tmp) / "autorun_runs.jsonl"
             with patch("agi_symposium.autorun.AUTORUN_LOG_PATH", log_path), patch(
                 "agi_symposium.autorun.STATE_DIR", Path(tmp)
-            ):
+            ), patch("agi_symposium.autorun.write_public_monitor_snapshot", return_value={"messages": [{"kind": "seed_state"}]}):
                 record = autorun.run_autorun_cycle(config, api, DryRunClient(node_config.display_name))
 
         self.assertEqual(record["status"], "pass")
@@ -71,6 +71,7 @@ class AutoRunTests(unittest.TestCase):
         self.assertEqual(record["active_daily_topic_id"], "DAY-001")
         self.assertEqual(record["result_packet_id"], "RPK-abc123")
         self.assertEqual(record["seed_answer_id"], "SEED-A-0001")
+        self.assertEqual(record["public_monitor_messages"], 1)
         self.assertIn("/api/seed/answer", [path for path, _ in api.posts])
         self.assertIn("/api/result-packets/export", [path for path, _ in api.posts])
         self.assertIn("/api/hall-of-fame/rebuild", [path for path, _ in api.posts])

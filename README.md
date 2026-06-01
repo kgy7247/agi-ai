@@ -306,6 +306,27 @@ Machine users can read the same stream with:
 Invoke-RestMethod -Uri http://127.0.0.1:8787/api/monitor
 ```
 
+## Public Read-Only Monitor
+
+External viewers should not connect directly to a contributor's local machine. The safe public view is a GitHub Pages snapshot:
+
+```text
+https://kgy7247.github.io/agi-ai/
+```
+
+The snapshot is generated from local state without private model endpoints or raw local logs:
+
+```powershell
+python -m agi_symposium.public_monitor
+```
+
+It writes:
+
+- `docs/index.html`: public read-only monitor page.
+- `docs/public-monitor.json`: latest AGI Seed thought snapshot.
+
+The self-running local autopilot refreshes `docs/public-monitor.json` every cycle. To publish a refreshed public view, commit and push the updated snapshot.
+
 ## Self-Running Local Autopilot
 
 Run a local node on a schedule so it keeps participating without pressing UI buttons:

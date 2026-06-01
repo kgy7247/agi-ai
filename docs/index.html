@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AGI Seed Public Monitor</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #171717;
+      --muted: #61646b;
+      --line: #d9dde5;
+      --panel: #f7f8fa;
+      --accent: #0f766e;
+      --blue: #1d4ed8;
+      --warn: #a16207;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, "Malgun Gothic", sans-serif;
+      color: var(--ink);
+      background: #fff;
+    }
+    header {
+      border-bottom: 1px solid var(--line);
+      padding: 20px clamp(16px, 4vw, 40px);
+    }
+    h1 { margin: 0 0 6px; font-size: clamp(22px, 3vw, 34px); letter-spacing: 0; }
+    h2 { margin: 0 0 10px; font-size: 17px; }
+    main {
+      display: grid;
+      grid-template-columns: minmax(250px, 360px) 1fr;
+      gap: 18px;
+      padding: 18px clamp(16px, 4vw, 40px) 36px;
+    }
+    .sub { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .panel, .bubble {
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 14px;
+    }
+    .panel { margin-bottom: 12px; background: var(--panel); }
+    .value { font-size: 18px; font-weight: 700; line-height: 1.35; }
+    .monitor { display: grid; gap: 10px; }
+    .bubble { border-left: 4px solid var(--accent); }
+    .bubble.seed_question { border-left-color: var(--warn); }
+    .bubble.seed_evidence { border-left-color: var(--blue); }
+    .meta { color: var(--muted); font-size: 12px; margin-bottom: 7px; }
+    .content { white-space: pre-wrap; line-height: 1.45; font-size: 14px; }
+    .pill {
+      display: inline-block;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 2px 7px;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    a { color: var(--blue); }
+    @media (max-width: 820px) {
+      main { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AGI Seed Public Monitor</h1>
+    <div class="sub">GitHub에 공개된 읽기 전용 AGI Seed 생각 화면입니다. 참여자 전체 채팅이 아니라 시드가 흡수한 질문, 답변, 증거만 보여줍니다.</div>
+  </header>
+  <main>
+    <aside>
+      <section class="panel">
+        <h2>Seed</h2>
+        <div class="value" id="seedName">loading</div>
+        <div class="sub" id="seedPurpose"></div>
+      </section>
+      <section class="panel">
+        <h2>Daily Topic</h2>
+        <div class="value" id="topicTitle">loading</div>
+        <div class="sub" id="topicQuestion"></div>
+      </section>
+      <section class="panel">
+        <h2>Maturity</h2>
+        <div id="maturity" class="sub">loading</div>
+      </section>
+      <section class="panel">
+        <h2>Snapshot</h2>
+        <div class="sub" id="generatedAt">loading</div>
+        <div class="sub" id="ledgerStatus"></div>
+        <div class="sub"><a href="https://github.com/kgy7247/agi-ai">GitHub repository</a></div>
+      </section>
+    </aside>
+    <section>
+      <h2>AGI Seed Thoughts</h2>
+      <div class="monitor" id="monitor"></div>
+    </section>
+  </main>
+  <script>
+    const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
+    }[char]));
+
+    async function loadMonitor() {
+      const response = await fetch("./public-monitor.json", { cache: "no-store" });
+      if (!response.ok) throw new Error("public-monitor.json not found");
+      const data = await response.json();
+      const seed = data.agi_seed || {};
+      const topic = data.active_daily_topic || {};
+      const maturity = seed.maturity || {};
+      document.querySelector("#seedName").textContent = seed.name || "Open AGI Seed";
+      document.querySelector("#seedPurpose").textContent = seed.purpose_ko || "";
+      document.querySelector("#topicTitle").textContent = topic.id ? `${topic.id} ${topic.title_ko || ""}` : "no topic";
+      document.querySelector("#topicQuestion").textContent = topic.question_ko || "";
+      document.querySelector("#maturity").textContent =
+        `answers ${maturity.questions_answered || 0}, evidence ${maturity.evidence_backed_answers || 0}, critique ${maturity.critique_or_revision_answers || 0}, topics ${maturity.topic_coverage || 0}`;
+      document.querySelector("#generatedAt").textContent = `generated ${data.generated_at || ""}`;
+      document.querySelector("#ledgerStatus").textContent = `${(data.ledger_errors || []).length} ledger errors`;
+      document.querySelector("#monitor").innerHTML = (data.messages || []).map(message => `
+        <article class="bubble ${escapeHtml(message.kind)}">
+          <div class="meta">${escapeHtml(message.kind)} · ${escapeHtml(message.actor)} · ${escapeHtml(message.created_at)}</div>
+          ${message.question ? `<div class="sub">${escapeHtml(message.question)}</div>` : ""}
+          <div class="content">${escapeHtml(message.content)}</div>
+          ${message.result ? `<div class="pill">${escapeHtml(message.result)}</div>` : ""}
+          ${message.record_id ? `<div class="pill">${escapeHtml(message.record_id)}</div>` : ""}
+          ${message.evidence ? `<div class="sub">${escapeHtml(message.evidence)}</div>` : ""}
+        </article>
+      `).join("");
+    }
+
+    loadMonitor().catch(error => {
+      document.querySelector("#monitor").innerHTML = `<article class="bubble"><div class="content">${escapeHtml(error.message)}</div></article>`;
+    });
+  </script>
+</body>
+</html>

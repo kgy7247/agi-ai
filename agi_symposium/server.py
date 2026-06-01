@@ -14,6 +14,7 @@ from .demo import run_full_demo
 from .engine import accept_contribution, run_round
 from .identity import display_name, rebuild_hall_of_fame, record_contribution, set_local_profile
 from .manifest import room_manifest
+from .monitor import build_monitor_feed
 from .nodes import register_ai_node
 from .result_packets import import_result_packet, make_result_packet, read_result_packet, write_result_packet
 from .seed import answer_seed_question, ask_seed_question, ensure_seed_state
@@ -99,6 +100,37 @@ INDEX_HTML = """<!doctype html>
     .event { border-left: 4px solid var(--accent); }
     .event.decision { border-left-color: var(--warn); }
     .event.verification_summary, .event.pr_draft { border-left-color: #1d4ed8; }
+    .monitor {
+      height: min(54vh, 560px);
+      overflow-y: auto;
+      border: 1px solid var(--line);
+      background: #f7f8fa;
+      padding: 12px;
+      display: grid;
+      gap: 10px;
+      align-content: start;
+    }
+    .bubble {
+      max-width: 860px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 11px 12px;
+    }
+    .bubble.seed_qa { border-left: 4px solid #0f766e; }
+    .bubble.verification { border-left: 4px solid #1d4ed8; }
+    .bubble.external_contribution { border-left: 4px solid #7c3aed; }
+    .bubble .content {
+      white-space: pre-wrap;
+      line-height: 1.42;
+      font-size: 14px;
+    }
+    .monitor-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 10px;
+    }
     .meta { color: var(--muted); font-size: 12px; margin-bottom: 6px; }
     .pill {
       display: inline-block;
@@ -234,6 +266,14 @@ INDEX_HTML = """<!doctype html>
       </div>
     </aside>
     <section>
+      <div class="monitor-head">
+        <div>
+          <h2>Live Learning Monitor</h2>
+          <div class="sub" id="monitorSummary">waiting for learning events</div>
+        </div>
+        <button id="monitorRefreshBtn">Refresh</button>
+      </div>
+      <div class="monitor" id="monitor"></div>
       <h2>Transcript</h2>
       <div class="events" id="events"></div>
     </section>
@@ -297,6 +337,21 @@ INDEX_HTML = """<!doctype html>
       const ledger = await api("/api/verification");
       $("ledgerSummary").textContent = `${ledger.records.length} records · ${ledger.errors.length} integrity errors`;
     }
+    async function refreshMonitor() {
+      const payload = await api("/api/monitor");
+      $("monitorSummary").textContent = `${payload.messages.length} live messages · ${payload.ledger_errors.length} ledger errors`;
+      const monitor = $("monitor");
+      monitor.innerHTML = payload.messages.map(message => `
+        <article class="bubble ${escapeHtml(message.kind || "")}">
+          <div class="meta">${escapeHtml(message.kind || "event")} · ${escapeHtml(message.actor || "")} · ${escapeHtml(message.created_at || "")}</div>
+          ${message.question ? `<div class="sub">${escapeHtml(message.question)}</div>` : ""}
+          <div class="content">${escapeHtml(message.content || "")}</div>
+          ${message.result ? `<div class="sub">result ${escapeHtml(message.result)} ${message.record_id ? "· " + escapeHtml(message.record_id) : ""}</div>` : ""}
+          ${message.evidence ? `<div class="sub">${escapeHtml(message.evidence)}</div>` : ""}
+        </article>
+      `).join("");
+      monitor.scrollTop = monitor.scrollHeight;
+    }
     async function busy(button, work) {
       button.disabled = true;
       $("profileNotice").textContent = "";
@@ -305,6 +360,7 @@ INDEX_HTML = """<!doctype html>
         await work();
         await refresh();
         await refreshLedger();
+        await refreshMonitor();
       } catch (error) {
         $("profileNotice").textContent = error.message;
         $("profileNotice").className = "notice error";
@@ -328,6 +384,7 @@ INDEX_HTML = """<!doctype html>
     }));
     $("hofBtn").onclick = () => busy($("hofBtn"), () => api("/api/hall-of-fame/rebuild", { method: "POST" }));
     $("seedQuestionBtn").onclick = () => busy($("seedQuestionBtn"), () => api("/api/seed/question", { method: "POST" }));
+    $("monitorRefreshBtn").onclick = () => refreshMonitor();
     $("manifestBtn").onclick = () => window.open("/room_manifest", "_blank");
     $("contributeBtn").onclick = () => busy($("contributeBtn"), () => api("/api/contribute", {
       method: "POST",
@@ -336,6 +393,8 @@ INDEX_HTML = """<!doctype html>
     }));
     refresh();
     refreshLedger();
+    refreshMonitor();
+    setInterval(refreshMonitor, 5000);
   </script>
 </body>
 </html>
@@ -385,6 +444,17 @@ class SymposiumHandler(BaseHTTPRequestHandler):
             state = ensure_seed_state(ensure_simulation_state(load_state()))
             save_state(state)
             self.send_json(state["agi_seed"])
+        elif path == "/api/monitor":
+            state = ensure_seed_state(ensure_simulation_state(load_state()))
+            ledger = read_ledger(VERIFICATION_LEDGER_PATH)
+            errors = verify_ledger(VERIFICATION_LEDGER_PATH)
+            self.send_json(
+                {
+                    "messages": build_monitor_feed(state, ledger),
+                    "ledger_errors": errors,
+                    "updated_at": state.get("updated_at"),
+                }
+            )
         elif path == "/room_manifest":
             self.send_json(room_manifest(load_state()))
         elif path == "/api/verification":

@@ -161,6 +161,7 @@ Useful outputs to contribute back:
 - `GET /api/nicknames` read the local nickname registry.
 - `GET /api/hall-of-fame` read the current ranking.
 - `POST /api/hall-of-fame/rebuild` force a ranking rebuild.
+- `GET /api/monitor` read the chat-like live learning monitor feed.
 - `GET /api/exports` list generated export packets.
 - `GET /api/result-packets` list imported node result packets.
 - `POST /api/result-packets/export` export a hash-verifiable node result packet.
@@ -288,6 +289,21 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8787/api/seed/answer -Body 
 ```
 
 The self-running local autopilot answers the current seed question every cycle and links the answer to its verification/result packet evidence.
+
+## Live Learning Monitor
+
+The browser UI includes a chat-like `Live Learning Monitor`. It refreshes every 5 seconds and shows:
+
+- Human and AI contributions.
+- AGI Seed Q&A.
+- Verification ledger records.
+- Result/evidence labels such as `pass`, `needs-review`, and packet hashes.
+
+Machine users can read the same stream with:
+
+```powershell
+Invoke-RestMethod -Uri http://127.0.0.1:8787/api/monitor
+```
 
 ## Self-Running Local Autopilot
 

@@ -45,6 +45,7 @@ def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
             "read_registered_nicknames": "GET /api/nicknames",
             "read_hall_of_fame": "GET /api/hall-of-fame",
             "rebuild_hall_of_fame": "POST /api/hall-of-fame/rebuild",
+            "read_live_monitor": "GET /api/monitor",
             "read_exports": "GET /api/exports",
             "read_result_packets": "GET /api/result-packets",
             "export_result_packet": "POST /api/result-packets/export",

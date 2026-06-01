@@ -19,6 +19,7 @@ class EngineTests(unittest.TestCase):
 
         self.assertEqual(manifest["entry_contract"]["read_state"], "GET /api/state")
         self.assertEqual(manifest["entry_contract"]["contribute"], "POST /api/contribute")
+        self.assertEqual(manifest["entry_contract"]["read_live_monitor"], "GET /api/monitor")
 
     def test_manifest_exposes_common_goal(self):
         manifest = room_manifest(initial_state())

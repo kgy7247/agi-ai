@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from .engine import initial_state
+from .goals import ensure_common_goal
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,7 +27,7 @@ def load_state() -> dict[str, Any]:
         save_state(state)
         return state
     with STATE_PATH.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
+        return ensure_common_goal(json.load(handle))
 
 
 def save_state(state: dict[str, Any]) -> None:

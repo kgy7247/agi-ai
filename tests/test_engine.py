@@ -20,6 +20,13 @@ class EngineTests(unittest.TestCase):
         self.assertEqual(manifest["entry_contract"]["read_state"], "GET /api/state")
         self.assertEqual(manifest["entry_contract"]["contribute"], "POST /api/contribute")
 
+    def test_manifest_exposes_common_goal(self):
+        manifest = room_manifest(initial_state())
+
+        self.assertIn("humans and AI", manifest["common_goal"]["en"])
+        self.assertIn("공동 학습", manifest["common_goal"]["ko"])
+        self.assertEqual(manifest["room"]["common_goal"], manifest["common_goal"]["en"])
+
     def test_external_contribution_requires_content(self):
         with self.assertRaises(ValueError):
             accept_contribution(initial_state(), {"agent_id": "x", "content": ""})
@@ -33,4 +40,3 @@ class EngineTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

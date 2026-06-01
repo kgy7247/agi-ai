@@ -158,6 +158,11 @@ INDEX_HTML = """<!doctype html>
         <div class="stat"><div class="label">Status</div><div class="value" id="status">idle</div></div>
       </div>
       <div class="block">
+        <h2>Common Goal</h2>
+        <div id="commonGoal">loading</div>
+        <div class="sub" id="commonGoalKo"></div>
+      </div>
+      <div class="block">
         <h2>Local Contributor</h2>
         <div class="label">Display</div>
         <div class="value" id="profileDisplay">digital211-gpt5</div>
@@ -234,6 +239,8 @@ INDEX_HTML = """<!doctype html>
     function render(state) {
       $("round").textContent = state.round ?? 0;
       $("status").textContent = state.status ?? "idle";
+      $("commonGoal").textContent = state.common_goal || "Participants and operators jointly pursue an AGI system for humans and AI through shared, verifiable learning.";
+      $("commonGoalKo").textContent = state.common_goal_ko || "";
       const profile = state.local_profile || {};
       $("profileDisplay").textContent = profile.display_name || `${profile.nickname || "digital211"}-${profile.ai_system || "gpt5"}`;
       $("nickname").value = profile.nickname || "digital211";

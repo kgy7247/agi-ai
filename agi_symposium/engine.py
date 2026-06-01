@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any
 
+from .goals import COMMON_GOAL, COMMON_GOAL_KO
 from .identity import make_profile
 from .simulation import AI_NODES, DEFAULT_WORK_PACKETS
 
@@ -63,6 +64,8 @@ DEFAULT_AGENTS = [
 def initial_state() -> dict[str, Any]:
     return {
         "topic": "AGI 달성을 위한 자율적 AI 토론 심포지엄",
+        "common_goal": COMMON_GOAL,
+        "common_goal_ko": COMMON_GOAL_KO,
         "round": 0,
         "status": "idle",
         "open_questions": [

@@ -131,14 +131,19 @@ def build_prompt(manifest: dict[str, Any], state: dict[str, Any], config: LocalN
     ready_packets = [packet for packet in work_packets if packet.get("status") in {"ready", "needs-review"}]
     selected_packet = ready_packets[0] if ready_packets else (work_packets[0] if work_packets else {})
     recent_events = list(state.get("events", []))[-8:]
+    goal = state.get("common_goal") or (manifest.get("common_goal") or {}).get("en") or ""
+    goal_ko = state.get("common_goal_ko") or (manifest.get("common_goal") or {}).get("ko") or ""
     return "\n".join(
         [
             "You are participating as an equal node in AGI Autonomous Symposium.",
             f"Display name: {config.display_name}",
             f"Node type: local_llm",
             f"Mode: {config.mode}",
+            f"Common goal: {goal}",
+            f"Common goal (ko): {goal_ko}",
             "",
             "Rules:",
+            "- Align the contribution with the common goal for humans and AI.",
             "- Do not claim AGI progress without an artifact, test, or measurable evidence.",
             "- Prefer one concrete next step over broad philosophy.",
             "- Mention the work packet ID you are addressing.",

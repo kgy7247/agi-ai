@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from .goals import ensure_common_goal
 from .identity import display_name, ensure_identity_state, rebuild_hall_of_fame, record_contribution
 
 AI_NODES = [
@@ -78,7 +79,7 @@ DEFAULT_WORK_PACKETS = [
 
 
 def ensure_simulation_state(state: dict[str, Any]) -> dict[str, Any]:
-    next_state = ensure_identity_state(state)
+    next_state = ensure_common_goal(ensure_identity_state(state))
     if "work_packets" not in next_state:
         next_state["work_packets"] = [dict(packet) for packet in DEFAULT_WORK_PACKETS]
     if "simulation_runs" not in next_state:

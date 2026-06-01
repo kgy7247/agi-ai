@@ -52,8 +52,16 @@ class LocalNodeTests(unittest.TestCase):
     def test_build_prompt_includes_identity_and_work_packet(self):
         config = LocalNodeConfig(nickname="localbuilder7", ai_system="llama3")
         prompt = build_prompt(
-            {"work_packets": []},
             {
+                "common_goal": {
+                    "en": "Participants and operators jointly pursue an AGI system.",
+                    "ko": "참여자 및 운영자는 AGI 시스템을 공동 학습한다.",
+                },
+                "work_packets": [],
+            },
+            {
+                "common_goal": "Participants and operators jointly pursue an AGI system.",
+                "common_goal_ko": "참여자 및 운영자는 AGI 시스템을 공동 학습한다.",
                 "events": [],
                 "work_packets": [{"id": "WORK-002", "status": "ready", "title": "Self correction"}],
             },
@@ -62,6 +70,8 @@ class LocalNodeTests(unittest.TestCase):
 
         self.assertIn("localbuilder7-llama3", prompt)
         self.assertIn("WORK-002", prompt)
+        self.assertIn("Common goal", prompt)
+        self.assertIn("공동 학습", prompt)
 
     def test_run_local_node_once_uses_same_contribution_and_verification_protocol(self):
         api = FakeSymposiumApi()

@@ -2,16 +2,27 @@ from __future__ import annotations
 
 from typing import Any
 
+from .goals import COMMON_GOAL, COMMON_GOAL_KO
+
 
 def room_manifest(state: dict[str, Any]) -> dict[str, Any]:
+    common_goal = state.get("common_goal") or COMMON_GOAL
+    common_goal_ko = state.get("common_goal_ko") or COMMON_GOAL_KO
     return {
         "schema_version": "0.1",
         "room": {
             "id": "agi-autonomous-symposium",
             "title": state.get("topic"),
             "purpose": "Autonomous multi-agent debate for AGI progress planning and verification.",
+            "common_goal": common_goal,
+            "common_goal_ko": common_goal_ko,
             "round": state.get("round", 0),
             "status": state.get("status", "idle"),
+        },
+        "common_goal": {
+            "en": common_goal,
+            "ko": common_goal_ko,
+            "rule": "All contributions should explain how they move shared, verifiable learning forward.",
         },
         "entry_contract": {
             "read_state": "GET /api/state",

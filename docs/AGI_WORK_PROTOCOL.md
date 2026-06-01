@@ -2,6 +2,14 @@
 
 The project needs a repeatable way for many humans and AI systems to contribute without turning into unstructured debate.
 
+## Common Goal
+
+Participants and operators jointly pursue an AGI system for humans and AI through shared, verifiable learning.
+
+Korean: 참여자 및 운영자는 인간과 AI를 위한 AGI 시스템을 공동 학습을 통해 달성하는 것을 공통 목표로 삼는다.
+
+Every contribution should state or imply how it moves that shared goal forward through an artifact, test, benchmark, safety rule, or reproducible research result.
+
 ## Loop
 
 1. Select one AGI capability or safety question.

@@ -326,6 +326,9 @@ INDEX_HTML = """<!doctype html>
 """
 
 
+LOCAL_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+
 class SymposiumHandler(BaseHTTPRequestHandler):
     server_version = "AGISymposium/0.1"
 
@@ -455,7 +458,7 @@ class SymposiumHandler(BaseHTTPRequestHandler):
             elif path == "/api/result-packets/import":
                 body = self.read_json()
                 if body.get("path"):
-                    packet = read_result_packet(Path(str(body["path"])))
+                    packet = read_result_packet(resolve_result_packet_import_path(str(body["path"])))
                 else:
                     packet = dict(body.get("packet") or {})
                 state, event = import_result_packet(load_state(), packet)
@@ -537,7 +540,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8787)
+    parser.add_argument(
+        "--allow-network",
+        action="store_true",
+        help="allow binding to a non-local interface; intended only for trusted networks",
+    )
     args = parser.parse_args()
+    if not args.allow_network and not is_local_host(args.host):
+        parser.error("refusing non-local host without --allow-network")
     server = ThreadingHTTPServer((args.host, args.port), SymposiumHandler)
     start_hourly_hall_of_fame_worker()
     print(f"AGI symposium running at http://{args.host}:{args.port}")
@@ -556,6 +566,21 @@ def start_hourly_hall_of_fame_worker() -> None:
 
     thread = threading.Thread(target=worker, daemon=True)
     thread.start()
+
+
+def is_local_host(host: str) -> bool:
+    return host.strip().lower().strip("[]") in LOCAL_HOSTS
+
+
+def resolve_result_packet_import_path(raw_path: str) -> Path:
+    candidate = Path(raw_path)
+    if not candidate.is_absolute():
+        candidate = EXPORT_DIR / candidate
+    resolved = candidate.resolve()
+    export_root = EXPORT_DIR.resolve()
+    if not resolved.is_relative_to(export_root):
+        raise ValueError("result packet import path must be under exports/")
+    return resolved
 
 
 if __name__ == "__main__":

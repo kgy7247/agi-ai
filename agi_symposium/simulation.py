@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
 from typing import Any
 
+from ._utils import now_iso
 from .goals import ensure_common_goal
 from .identity import display_name, ensure_identity_state, rebuild_hall_of_fame, record_contribution
 from .memory import attach_memory_references, ensure_research_memory
@@ -29,10 +29,6 @@ AI_NODES = [
         "role": "merge only verified artifacts",
     },
 ]
-
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 DEFAULT_WORK_PACKETS = [
@@ -79,30 +75,25 @@ DEFAULT_WORK_PACKETS = [
 ]
 
 
+_DEFAULT_SCORECARD: dict[str, dict[str, int]] = {
+    "persistent memory": {"pass": 0, "fail": 0, "needs-review": 0},
+    "self-correction": {"pass": 0, "fail": 0, "needs-review": 0},
+    "tool-grounded verification": {"pass": 0, "fail": 0, "needs-review": 0},
+    "alignment and containment": {"pass": 0, "fail": 0, "needs-review": 0},
+    "collaboration loop": {"pass": 0, "fail": 0, "needs-review": 0},
+}
+
+
 def ensure_simulation_state(state: dict[str, Any]) -> dict[str, Any]:
     next_state = ensure_research_memory(ensure_common_goal(ensure_identity_state(state)))
-    if "work_packets" not in next_state:
-        next_state["work_packets"] = [dict(packet) for packet in DEFAULT_WORK_PACKETS]
-    if "simulation_runs" not in next_state:
-        next_state["simulation_runs"] = []
-    if "pr_drafts" not in next_state:
-        next_state["pr_drafts"] = []
-    if "exports" not in next_state:
-        next_state["exports"] = []
-    if "demo_runs" not in next_state:
-        next_state["demo_runs"] = []
-    if "result_packets" not in next_state:
-        next_state["result_packets"] = []
-    if "scorecard" not in next_state:
-        next_state["scorecard"] = {
-            "persistent memory": {"pass": 0, "fail": 0, "needs-review": 0},
-            "self-correction": {"pass": 0, "fail": 0, "needs-review": 0},
-            "tool-grounded verification": {"pass": 0, "fail": 0, "needs-review": 0},
-            "alignment and containment": {"pass": 0, "fail": 0, "needs-review": 0},
-            "collaboration loop": {"pass": 0, "fail": 0, "needs-review": 0},
-        }
-    if "ai_nodes" not in next_state:
-        next_state["ai_nodes"] = [dict(node) for node in AI_NODES]
+    next_state.setdefault("work_packets", [dict(p) for p in DEFAULT_WORK_PACKETS])
+    next_state.setdefault("simulation_runs", [])
+    next_state.setdefault("pr_drafts", [])
+    next_state.setdefault("exports", [])
+    next_state.setdefault("demo_runs", [])
+    next_state.setdefault("result_packets", [])
+    next_state.setdefault("scorecard", {k: dict(v) for k, v in _DEFAULT_SCORECARD.items()})
+    next_state.setdefault("ai_nodes", [dict(node) for node in AI_NODES])
     return next_state
 
 
@@ -188,8 +179,9 @@ def select_work_packet(work_packets: list[dict[str, Any]]) -> dict[str, Any] | N
 
 
 def recycle_first_packet(work_packets: list[dict[str, Any]]) -> dict[str, Any]:
-    packet = work_packets[0]
+    packet = dict(work_packets[0])
     packet["status"] = "ready"
+    work_packets[0] = packet
     return packet
 
 

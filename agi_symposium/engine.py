@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Any
 
+from ._utils import now_iso
 from .agi_milestones import assess_milestones, demo_evidence
 from .daily_topics import ensure_daily_topic_state
 from .goals import COMMON_GOAL, COMMON_GOAL_KO
@@ -133,10 +133,6 @@ def initial_state() -> dict[str, Any]:
         "updated_at": now_iso(),
     }
     return ensure_seed_state(ensure_daily_topic_state(state))
-
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 def run_round(state: dict[str, Any]) -> tuple[dict[str, Any], list[dict[str, Any]]]:

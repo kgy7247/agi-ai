@@ -567,8 +567,8 @@ class SymposiumHandler(BaseHTTPRequestHandler):
                     read_ledger(VERIFICATION_LEDGER_PATH),
                     contributor=str(body.get("contributor") or display_name(state["local_profile"])),
                 )
-                path = write_result_packet(packet, EXPORT_DIR)
-                self.send_json({"accepted": True, "packet": packet, "path": str(path)})
+                packet_path = write_result_packet(packet, EXPORT_DIR)
+                self.send_json({"accepted": True, "packet": packet, "path": str(packet_path)})
             elif path == "/api/result-packets/import":
                 body = self.read_json()
                 if body.get("path"):
@@ -623,10 +623,14 @@ class SymposiumHandler(BaseHTTPRequestHandler):
         except ValueError as exc:
             self.send_json({"error": str(exc)}, status=400)
 
+    _MAX_BODY = 1 * 1024 * 1024  # 1 MB
+
     def read_json(self) -> dict[str, Any]:
         length = int(self.headers.get("Content-Length") or "0")
         if length == 0:
             return {}
+        if length > self._MAX_BODY:
+            raise ValueError(f"request body too large ({length} bytes)")
         raw = self.rfile.read(length)
         return json.loads(raw.decode("utf-8"))
 
@@ -647,7 +651,9 @@ class SymposiumHandler(BaseHTTPRequestHandler):
         self.wfile.write(data)
 
     def log_message(self, format: str, *args: Any) -> None:
-        return
+        # log only 4xx/5xx responses; status code is args[1] from log_request
+        if len(args) < 2 or str(args[1]).startswith(("4", "5")):
+            super().log_message(format, *args)
 
 
 def main() -> None:
